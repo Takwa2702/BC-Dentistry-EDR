@@ -1,0 +1,1445 @@
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/bc-dentistry-frontend$ docker pull mysql:latest
+
+latest: Pulling from library/mysql
+d9a40b27c30f: Pull complete 
+fe4b01031aab: Pull complete 
+aa72c34c4347: Pull complete 
+473ade985fa2: Pull complete 
+cc168a9482de: Pull complete 
+3ca3786815dd: Pull complete 
+3e3fac98ea83: Pull complete 
+10e5505c3ae4: Pull complete 
+a79ade39aab9: Pull complete 
+ae34d51c6da2: Pull complete 
+Digest: sha256:d8df069848906979fd7511db00dc22efeb0a33a990d87c3c6d3fcdafd6fc6123
+Status: Downloaded newer image for mysql:latest
+docker.io/library/mysql:latest
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/bc-dentistry-frontend$ 
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/bc-dentistry-frontend$ docker run --name=mysql-server -e MYSQL_ROOT_PASSWORD=OpenUAE@123 -d mysql:latest
+ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/bc-dentistry-frontend$ docker start mysql-server
+mysql-server
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/bc-dentistry-frontend$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+lstat /home/openuae/BC_Dentistry_temp/bc-dentistry-frontend/datamodel2.sql: no such file or directory
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/bc-dentistry-frontend$ cd ..
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp$ ls
+BC-Dentistry-develop  bc-dentistry-frontend  Dentistry_temp  fabric-samples  off_chain_database
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp$ cd off_chain_database/
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ls
+checking-gpg-signature.html  datamodel2.sql  datamodel.sql  mysql-apt-config_0.8.22-1_all.deb  mysql-apt-config_0.8.22-1_all.deb.1  mysql-apt-config_0.8.22-1_all.deb.2
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ls
+checking-gpg-signature.html  datamodel2.sql  datamodel.sql  mysql-apt-config_0.8.22-1_all.deb  mysql-apt-config_0.8.22-1_all.deb.1  mysql-apt-config_0.8.22-1_all.deb.2
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker ps -a
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                 NAMES
+ea000c69ca30   mysql:latest   "docker-entrypoint.s…"   4 minutes ago   Up 4 minutes   3306/tcp, 33060/tcp   mysql-server
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p mydatabase < /datamodel2.sql
+bash: /datamodel2.sql: No such file or directory
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p mydatabase < datamodel2.sql
+the input device is not a TTY
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ls
+datamodel2.sql  datamodel.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p mydatabase < datamodel2.sql^C
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -i mysql-server mysql -uroot -pmy-secret-pw mydatabase < /datamodel2.sql
+bash: /datamodel2.sql: No such file or directory
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -i mysql-server mysql -uroot -pmy-secret-pw mydatabase < datamodel2.sql
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -i mysql-server mysql -uroot -p^Cydatabase < datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -i mysql-server mysql -uroot -p OpenUAE@123 mydatabase < datamodel2.sql
+mysql  Ver 9.0.1 for Linux on x86_64 (MySQL Community Server - GPL)
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Usage: mysql [OPTIONS] [database]
+  -?, --help          Display this help and exit.
+  -I, --help          Synonym for -?
+  --auto-rehash       Enable automatic rehashing. One doesn't need to use
+                      'rehash' to get table and field completion, but startup
+                      and reconnecting may take a longer time. Disable with
+                      --disable-auto-rehash.
+                      (Defaults to on; use --skip-auto-rehash to disable.)
+  -A, --no-auto-rehash 
+                      No automatic rehashing. One has to use 'rehash' to get
+                      table and field completion. This gives a quicker start of
+                      mysql and disables rehashing on reconnect.
+  --auto-vertical-output 
+                      Automatically switch to vertical output mode if the
+                      result is wider than the terminal width.
+  -B, --batch         Don't use history file. Disable interactive behavior.
+                      (Enables --silent.)
+  --bind-address=name IP address to bind to.
+  --binary-as-hex     Print binary data as hex. Enabled by default for
+                      interactive terminals.
+  --character-sets-dir=name 
+                      Directory for character set files.
+  --column-type-info  Display column type information.
+  -c, --comments      Preserve comments. Send comments to the server. The
+                      default is --comments (keep comments), disable with
+                      --skip-comments.
+                      (Defaults to on; use --skip-comments to disable.)
+  -C, --compress      Use compression in server/client protocol.
+  -#, --debug[=#]     This is a non-debug version. Catch this and exit.
+  --debug-check       This is a non-debug version. Catch this and exit.
+  -T, --debug-info    This is a non-debug version. Catch this and exit.
+  -D, --database=name Database to use.
+  --default-character-set=name 
+                      Set the default character set.
+  --delimiter=name    Delimiter to be used.
+  --enable-cleartext-plugin 
+                      Enable/disable the clear text authentication plugin.
+  -e, --execute=name  Execute command and quit. (Disables --force and history
+                      file.)
+  -E, --vertical      Print the output of a query (rows) vertically.
+  -f, --force         Continue even if we get an SQL error.
+  --histignore=name   A colon-separated list of patterns to keep statements
+                      from getting logged into syslog and mysql history.
+  -G, --named-commands 
+                      Enable named commands. Named commands mean this program's
+                      internal commands; see mysql> help . When enabled, the
+                      named commands can be used from any line of the query,
+                      otherwise only from the first line, before an enter.
+                      Disable with --disable-named-commands. This option is
+                      disabled by default.
+  -i, --ignore-spaces Ignore space after function names.
+  --init-command=name Single SQL Command to execute when connecting to MySQL
+                      server. Will automatically be re-executed when
+                      reconnecting.
+  --init-command-add=name 
+                      Add SQL command to the list to execute when connecting to
+                      MySQL server. Will automatically be re-executed when
+                      reconnecting.
+  --local-infile      Enable/disable LOAD DATA LOCAL INFILE.
+  -b, --no-beep       Turn off beep on error.
+  -h, --host=name     Connect to host.
+  --dns-srv-name=name Connect to a DNS SRV resource
+  -H, --html          Produce HTML output.
+  -X, --xml           Produce XML output.
+  --line-numbers      Write line numbers for errors.
+                      (Defaults to on; use --skip-line-numbers to disable.)
+  -L, --skip-line-numbers 
+                      Don't write line number for errors.
+  -n, --unbuffered    Flush buffer after each query.
+  --column-names      Write column names in results.
+                      (Defaults to on; use --skip-column-names to disable.)
+  -N, --skip-column-names 
+                      Don't write column names in results.
+  --sigint-ignore     Ignore SIGINT (CTRL-C).
+  -o, --one-database  Ignore statements except those that occur while the
+                      default database is the one named at the command line.
+  --pager[=name]      Pager to use to display results. If you don't supply an
+                      option, the default pager is taken from your ENV variable
+                      PAGER. Valid pagers are less, more, cat [> filename],
+                      etc. See interactive help (\h) also. This option does not
+                      work in batch mode. Disable with --disable-pager. This
+                      option is disabled by default.
+  -p, --password[=name] 
+                      Password to use when connecting to server. If password is
+                      not given it's asked from the tty.
+  -,, --password1[=name] 
+                      Password for first factor authentication plugin.
+  -,, --password2[=name] 
+                      Password for second factor authentication plugin.
+  -,, --password3[=name] 
+                      Password for third factor authentication plugin.
+  -P, --port=#        Port number to use for connection or 0 for default to, in
+                      order of preference, my.cnf, $MYSQL_TCP_PORT,
+                      /etc/services, built-in default (3306).
+  --prompt=name       Set the mysql prompt to this value.
+  --protocol=name     The protocol to use for connection (tcp, socket, pipe,
+                      memory).
+  -q, --quick         Don't cache result, print it row by row. This may slow
+                      down the server if the output is suspended. Doesn't use
+                      history file.
+  -r, --raw           Write fields without conversion. Used with --batch.
+  --reconnect         Reconnect if the connection is lost. Disable with
+                      --disable-reconnect. This option is enabled by default.
+                      (Defaults to on; use --skip-reconnect to disable.)
+  -s, --silent        Be more silent. Print results with a tab as separator,
+                      each row on new line.
+  -S, --socket=name   The socket file to use for connection.
+  --server-public-key-path=name 
+                      File path to the server public RSA key in PEM format.
+  --get-server-public-key 
+                      Get server public key
+  --ssl-mode=name     SSL connection mode.
+  --ssl-ca=name       CA file in PEM format.
+  --ssl-capath=name   CA directory.
+  --ssl-cert=name     X509 cert in PEM format.
+  --ssl-cipher=name   SSL cipher to use.
+  --ssl-key=name      X509 key in PEM format.
+  --ssl-crl=name      Certificate revocation list.
+  --ssl-crlpath=name  Certificate revocation list path.
+  --tls-version=name  TLS version to use, permitted values are: TLSv1.2,
+                      TLSv1.3
+  --ssl-fips-mode=name 
+                      SSL FIPS mode (applies only for OpenSSL); permitted
+                      values are: OFF, ON, STRICT
+  --tls-ciphersuites=name 
+                      TLS v1.3 cipher to use.
+  --ssl-session-data=name 
+                      Session data file to use to enable ssl session reuse
+  --ssl-session-data-continue-on-failed-reuse 
+                      If set to ON, this option will allow connection to
+                      succeed even if session data cannot be reused.
+  --tls-sni-servername=name 
+                      The SNI server name to pass to server
+  -t, --table         Output in table format.
+  --tee=name          Append everything into outfile. See interactive help (\h)
+                      also. Does not work in batch mode. Disable with
+                      --disable-tee. This option is disabled by default.
+  -u, --user=name     User for login if not current user.
+  -U, --safe-updates  Only allow UPDATE and DELETE that uses keys.
+  -U, --i-am-a-dummy  Synonym for option --safe-updates, -U.
+  -v, --verbose       Write more. (-v -v -v gives the table output format).
+  -V, --version       Output version information and exit.
+  -w, --wait          Wait and retry if connection is down.
+  --connect-timeout=# Number of seconds before connection timeout.
+  --max-allowed-packet=# 
+                      The maximum packet length to send to or receive from
+                      server.
+  --net-buffer-length=# 
+                      The buffer size for TCP/IP and socket communication.
+  --select-limit=#    Automatic limit for SELECT when using --safe-updates.
+  --max-join-size=#   Automatic limit for rows in a join when using
+                      --safe-updates.
+  --show-warnings     Show warnings after every statement.
+  -j, --syslog        Log filtered interactive commands to syslog. Filtering of
+                      commands depends on the patterns supplied via histignore
+                      option besides the default patterns.
+  --plugin-dir=name   Directory for client-side plugins.
+  --default-auth=name Default authentication client-side plugin to use.
+  --binary-mode       By default, ASCII '\0' is disallowed and '\r\n' is
+                      translated to '\n'. This switch turns off both features,
+                      and also turns off parsing of all clientcommands except
+                      \C and DELIMITER, in non-interactive mode (for input
+                      piped to mysql or loaded using the 'source' command).
+                      This is necessary when processing output from mysqlbinlog
+                      that may contain blobs.
+  --connect-expired-password 
+                      Notify the server that this client is prepared to handle
+                      expired password sandbox mode.
+  --network-namespace=name 
+                      Network namespace to use for connection via tcp with a
+                      server.
+  --compression-algorithms=name 
+                      Use compression algorithm in server/client protocol.
+                      Valid values are any combination of
+                      'zstd','zlib','uncompressed'.
+  --zstd-compression-level=# 
+                      Use this compression level in the client/server protocol,
+                      in case --compression-algorithms=zstd. Valid range is
+                      between 1 and 22, inclusive. Default is 3.
+  --load-data-local-dir=name 
+                      Directory path safe for LOAD DATA LOCAL INFILE to read
+                      from.
+  --authentication-oci-client-config-profile=name 
+                      Specifies the configuration profile whose configuration
+                      options are to be read from the OCI configuration file.
+                      Default is DEFAULT.
+  --oci-config-file=name 
+                      Specifies the location of the OCI configuration file.
+                      Default for Linux is ~/.oci/config and %HOME/.oci/config
+                      on Windows.
+  --telemetry-client  Load the telemetry_client plugin.
+  --plugin-authentication-webauthn-client-preserve-privacy 
+                      Allows selection of discoverable credential to be used
+                      for signing challenge. default is false - implies
+                      challenge is signed by all credentials for given relying
+                      party.
+  --plugin-authentication-webauthn-device=# 
+                      Specifies what libfido2 device to use. 0 (the first
+                      device) is the default.
+  --register-factor=name 
+                      Specifies factor for which registration needs to be done
+                      for.
+
+Default options are read from the following files in the given order:
+/etc/my.cnf /etc/mysql/my.cnf /usr/etc/my.cnf ~/.my.cnf 
+The following groups are read: mysql client
+The following options may be given as the first argument:
+--print-defaults        Print the program argument list and exit.
+--no-defaults           Don't read default options from any option file,
+                        except for login file.
+--defaults-file=#       Only read default options from the given file #.
+--defaults-extra-file=# Read this file after the global files are read.
+--defaults-group-suffix=#
+                        Also read groups with concat(group, suffix)
+--login-path=#          Read this path from the login file.
+--no-login-paths        Don't read login paths from the login path file.
+
+Variables (--variable-name=value)
+and boolean options {FALSE|TRUE}                       Value (after reading options)
+------------------------------------------------------ -------------------
+auto-rehash                                            TRUE
+auto-vertical-output                                   FALSE
+bind-address                                           (No default value)
+binary-as-hex                                          FALSE
+character-sets-dir                                     (No default value)
+column-type-info                                       FALSE
+comments                                               TRUE
+compress                                               FALSE
+database                                               (No default value)
+default-character-set                                  auto
+delimiter                                              ;
+enable-cleartext-plugin                                FALSE
+vertical                                               FALSE
+force                                                  FALSE
+histignore                                             (No default value)
+named-commands                                         FALSE
+ignore-spaces                                          FALSE
+local-infile                                           FALSE
+no-beep                                                FALSE
+host                                                   (No default value)
+dns-srv-name                                           (No default value)
+html                                                   FALSE
+xml                                                    FALSE
+line-numbers                                           TRUE
+unbuffered                                             FALSE
+column-names                                           TRUE
+sigint-ignore                                          FALSE
+port                                                   0
+prompt                                                 mysql> 
+quick                                                  FALSE
+raw                                                    FALSE
+reconnect                                              FALSE
+socket                                                 /var/run/mysqld/mysqld.sock
+server-public-key-path                                 (No default value)
+get-server-public-key                                  FALSE
+ssl-ca                                                 (No default value)
+ssl-capath                                             (No default value)
+ssl-cert                                               (No default value)
+ssl-cipher                                             (No default value)
+ssl-key                                                (No default value)
+ssl-crl                                                (No default value)
+ssl-crlpath                                            (No default value)
+tls-version                                            (No default value)
+tls-ciphersuites                                       (No default value)
+ssl-session-data                                       (No default value)
+ssl-session-data-continue-on-failed-reuse              FALSE
+tls-sni-servername                                     (No default value)
+table                                                  FALSE
+user                                                   root
+safe-updates                                           FALSE
+i-am-a-dummy                                           FALSE
+wait                                                   FALSE
+connect-timeout                                        0
+max-allowed-packet                                     16777216
+net-buffer-length                                      16384
+select-limit                                           1000
+max-join-size                                          1000000
+show-warnings                                          FALSE
+plugin-dir                                             (No default value)
+default-auth                                           (No default value)
+binary-mode                                            FALSE
+connect-expired-password                               FALSE
+network-namespace                                      (No default value)
+compression-algorithms                                 (No default value)
+zstd-compression-level                                 3
+load-data-local-dir                                    (No default value)
+authentication-oci-client-config-profile               (No default value)
+oci-config-file                                        (No default value)
+telemetry-client                                       FALSE
+plugin-authentication-webauthn-client-preserve-privacy FALSE
+plugin-authentication-webauthn-device                  0
+register-factor                                        (No default value)
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 9
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> USE mydatabase;
+ERROR 1049 (42000): Unknown database 'mydatabase'
+mysql> SHOW TABLES;
+ERROR 1046 (3D000): No database selected
+mysql> exit 
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker ps -a
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS                 NAMES
+ea000c69ca30   mysql:latest   "docker-entrypoint.s…"   10 minutes ago   Up 10 minutes   3306/tcp, 33060/tcp   mysql-server
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p mydatabase < /datamodel2.sql
+bash: /datamodel2.sql: No such file or directory
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p mydatabase < datamodel2.sql
+the input device is not a TTY
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ <pre>docker exec -it mysql-server mysql -uroot -p mydatabase &lt; datamodel2.sql
+[1] 3417803
+bash: pre: No such file or directory
+
+Command 'lt' not found, but can be installed with:
+
+sudo apt install looptools
+
+[1]+  Exit 1                  exec -it mysql-server mysql -uroot -p mydatabase < pre > docker
+datamodel2.sql: command not found
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ the input device is not a TTY
+
+Command 'the' not found, but can be installed with:
+
+sudo apt install the
+
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ cat datamodel2.sql | docker exec -i mysql-server mysql -uroot -pmy-secret-pw mydatabase
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ cat datamodel2.sql | docker exec -i mysql-server mysql -uroot -pOpenUAE@123 mydatabase
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1049 (42000): Unknown database 'mydatabase'
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -pOpenUAE@123
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 12
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> CREATE DATABASE mydatabase;
+Query OK, 1 row affected (0.07 sec)
+
+mysql> EXIT;
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ <pre>at datamodel2.sql | docker exec -i mysql-server mysql -uroot -pOpenUAE@123 mydatabase
+bash: pre: No such file or directory
+mysql: [Warning] Using a password on the command line interface can be insecure.
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ mysql: [Warning] Using a password on the command line interface can be insecure.
+
+Command 'mysql:' not found, did you mean:
+
+  command 'mysql' from deb mysql-client-core-8.0 (8.0.37-0ubuntu0.20.04.3)
+  command 'mysql' from deb mariadb-client-core-10.3 (1:10.3.39-0ubuntu0.20.04.2)
+  command 'mysqld' from deb mysql-server-core-8.0 (8.0.37-0ubuntu0.20.04.3)
+  command 'mysqld' from deb mariadb-server-core-10.3 (1:10.3.39-0ubuntu0.20.04.2)
+
+Try: sudo apt install <deb name>
+
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ERROR 1049 (42000): Unknown database &apos;mydatabase&apos;
+bash: syntax error near unexpected token `('
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ </pre>^C
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ cat datamodel2.sql | docker exec -i mysql-server mysql -uroot -pOpenUAE@123 mydatabase
+mysql: [Warning] Using a password on the command line interface can be insecure.
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 15
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> USE mydatabase;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> SHOW TABLES;
++-----------------------------------+
+| Tables_in_mydatabase              |
++-----------------------------------+
+| Admin                             |
+| Allergies                         |
+| Appointment                       |
+| Appointment_Status                |
+| Attachment_Type                   |
+| Attachments                       |
+| Data_Access                       |
+| Data_Access_Type                  |
+| Dental_Chart                      |
+| Dental_Chart_Category             |
+| Dental_Chart_Status               |
+| Dental_History                    |
+| Discipline                        |
+| Doctor                            |
+| Finances                          |
+| Insurance                         |
+| Lab_Prescriptions                 |
+| Lab_Results                       |
+| Lab_Treatment                     |
+| Lab_Treatment_Teeth_Details       |
+| Medical_History                   |
+| Medical_History_Answer            |
+| Medical_History_Category          |
+| Medical_History_Health_Impression |
+| Medical_History_Question_Type     |
+| Medications                       |
+| Notification                      |
+| Notification_Status               |
+| Notification_Type                 |
+| Organization                      |
+| Organization_Type                 |
+| Patient                           |
+| Permissions                       |
+| Request                           |
+| Request_Status                    |
+| Request_Type                      |
+| Sys_Admin                         |
+| Teeth_Details                     |
+| User                              |
+| UserRole                          |
+| User_Activity_Status              |
++-----------------------------------+
+41 rows in set (0.01 sec)
+
+mysql> exit 
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker ps -a
+CONTAINER ID   IMAGE          COMMAND                  CREATED       STATUS       PORTS                 NAMES
+ea000c69ca30   mysql:latest   "docker-entrypoint.s…"   8 hours ago   Up 8 hours   3306/tcp, 33060/tcp   mysql-server
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ^C
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ^C
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker inspect ea000c69ca30
+[
+    {
+        "Id": "ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283",
+        "Created": "2024-07-30T08:17:04.348460449Z",
+        "Path": "docker-entrypoint.sh",
+        "Args": [
+            "mysqld"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 3416942,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2024-07-30T08:17:10.494700436Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:7ce93a845a8a98c89bd58a5e45fe71277ca5f52177c88046858a6a0af969ba74",
+        "ResolvConfPath": "/var/lib/docker/containers/ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283/hostname",
+        "HostsPath": "/var/lib/docker/containers/ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283/hosts",
+        "LogPath": "/var/lib/docker/containers/ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283/ea000c69ca30dcb8c5e9cf5fb5cf7ffe88c49993d9f1127655f56371940dd283-json.log",
+        "Name": "/mysql-server",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "default",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                53,
+                203
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "host",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": false,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/asound",
+                "/proc/acpi",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/sys/firmware",
+                "/sys/devices/virtual/powercap"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/e3091ce7576dc0e29876b36be834f51044e40c2fd02d3d4ded067f9f4f069df6-init/diff:/var/lib/docker/overlay2/6dac3388e2102e2787f0be33bef4d14a7b485d18eabb9919c4550bbde89afa00/diff:/var/lib/docker/overlay2/6270808959b11be23e1f071379d140cd4401729f4dff8c55e38cef35c54d9eaf/diff:/var/lib/docker/overlay2/8b25c4354b9785e11569fed1064a3df94a52e772a48a54c0e1f8300b7626c3fe/diff:/var/lib/docker/overlay2/b26054a992a6e41bfab062781a6df394b398a65641f9629abc49d7497e1d9496/diff:/var/lib/docker/overlay2/0959c5716b5beb15ffbadffbc68cf87a495687ca0ae457794d477e0f1e97cf5c/diff:/var/lib/docker/overlay2/95978e52b11a46ac96a44fbf9734e2a4f517d98f9495bf21717635f1cab8ef90/diff:/var/lib/docker/overlay2/458f93d881fb0cfc715b220d257eaa324b135937bc8ad8f34e85654a291df2b8/diff:/var/lib/docker/overlay2/b970ff526bb7c65c7c17092211abd3b27345f63ce4a4bbf2260d090d464dc885/diff:/var/lib/docker/overlay2/f63a711eda06f6191772932a749131a5031754c619e0fccbeda1a3598223b33c/diff:/var/lib/docker/overlay2/02a02eb26eafb4516400bc28c008c92b8881247bb749083d068ea5e62027b41c/diff",
+                "MergedDir": "/var/lib/docker/overlay2/e3091ce7576dc0e29876b36be834f51044e40c2fd02d3d4ded067f9f4f069df6/merged",
+                "UpperDir": "/var/lib/docker/overlay2/e3091ce7576dc0e29876b36be834f51044e40c2fd02d3d4ded067f9f4f069df6/diff",
+                "WorkDir": "/var/lib/docker/overlay2/e3091ce7576dc0e29876b36be834f51044e40c2fd02d3d4ded067f9f4f069df6/work"
+            },
+            "Name": "overlay2"
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "1c219c9da399403f9240540ea909813ac94bfbef441c50b160cc3beea4a302e1",
+                "Source": "/var/lib/docker/volumes/1c219c9da399403f9240540ea909813ac94bfbef441c50b160cc3beea4a302e1/_data",
+                "Destination": "/var/lib/mysql",
+                "Driver": "local",
+                "Mode": "",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "ea000c69ca30",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "3306/tcp": {},
+                "33060/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "MYSQL_ROOT_PASSWORD=OpenUAE@123",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GOSU_VERSION=1.17",
+                "MYSQL_MAJOR=innovation",
+                "MYSQL_VERSION=9.0.1-1.el9",
+                "MYSQL_SHELL_VERSION=9.0.1-1.el9"
+            ],
+            "Cmd": [
+                "mysqld"
+            ],
+            "Image": "mysql:latest",
+            "Volumes": {
+                "/var/lib/mysql": {}
+            },
+            "WorkingDir": "",
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {}
+        },
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "473cbd91c9f563b2d381510213886ca525e78170acb4e2816d9373778a1ad64a",
+            "SandboxKey": "/var/run/docker/netns/473cbd91c9f5",
+            "Ports": {
+                "3306/tcp": null,
+                "33060/tcp": null
+            },
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "8d451ed718f24927efe0ab0d01c2b5c5285d6f0f88881e52f2b522fea5058d4f",
+            "Gateway": "172.17.0.1",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "172.17.0.2",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "MacAddress": "02:42:ac:11:00:02",
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "MacAddress": "02:42:ac:11:00:02",
+                    "NetworkID": "da3cc16693da715c7259ab040da2021947399f3eb514913cced5ae4ef3ff329b",
+                    "EndpointID": "8d451ed718f24927efe0ab0d01c2b5c5285d6f0f88881e52f2b522fea5058d4f",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DriverOpts": null,
+                    "DNSNames": null
+                }
+            }
+        }
+    }
+]
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker inspect --format='{{json .NetworkSettings.Ports}}' ea000c69ca30
+{"3306/tcp":null,"33060/tcp":null}
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ ^C
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker pull mysql:latest
+latest: Pulling from library/mysql
+d9a40b27c30f: Pull complete 
+fe4b01031aab: Pull complete 
+aa72c34c4347: Pull complete 
+473ade985fa2: Pull complete 
+cc168a9482de: Pull complete 
+3ca3786815dd: Pull complete 
+3e3fac98ea83: Pull complete 
+10e5505c3ae4: Pull complete 
+a79ade39aab9: Pull complete 
+ae34d51c6da2: Pull complete 
+Digest: sha256:d8df069848906979fd7511db00dc22efeb0a33a990d87c3c6d3fcdafd6fc6123
+Status: Downloaded newer image for mysql:latest
+docker.io/library/mysql:latest
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker run --name=mysql-server -e MYSQL_ROOT_PASSWORD=OpenUAE@123 -d mysql:latest
+dafd0816f6d409a5190c39ee3282a3ff22f814f95bd617019c6261700629fb80
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker start mysql-server
+mysql-server
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -i mysql-server mysql -uroot -p OpenUAE@123 mydatabase < datamodel2.sql
+mysql  Ver 9.0.1 for Linux on x86_64 (MySQL Community Server - GPL)
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Usage: mysql [OPTIONS] [database]
+  -?, --help          Display this help and exit.
+  -I, --help          Synonym for -?
+  --auto-rehash       Enable automatic rehashing. One doesn't need to use
+                      'rehash' to get table and field completion, but startup
+                      and reconnecting may take a longer time. Disable with
+                      --disable-auto-rehash.
+                      (Defaults to on; use --skip-auto-rehash to disable.)
+  -A, --no-auto-rehash 
+                      No automatic rehashing. One has to use 'rehash' to get
+                      table and field completion. This gives a quicker start of
+                      mysql and disables rehashing on reconnect.
+  --auto-vertical-output 
+                      Automatically switch to vertical output mode if the
+                      result is wider than the terminal width.
+  -B, --batch         Don't use history file. Disable interactive behavior.
+                      (Enables --silent.)
+  --bind-address=name IP address to bind to.
+  --binary-as-hex     Print binary data as hex. Enabled by default for
+                      interactive terminals.
+  --character-sets-dir=name 
+                      Directory for character set files.
+  --column-type-info  Display column type information.
+  -c, --comments      Preserve comments. Send comments to the server. The
+                      default is --comments (keep comments), disable with
+                      --skip-comments.
+                      (Defaults to on; use --skip-comments to disable.)
+  -C, --compress      Use compression in server/client protocol.
+  -#, --debug[=#]     This is a non-debug version. Catch this and exit.
+  --debug-check       This is a non-debug version. Catch this and exit.
+  -T, --debug-info    This is a non-debug version. Catch this and exit.
+  -D, --database=name Database to use.
+  --default-character-set=name 
+                      Set the default character set.
+  --delimiter=name    Delimiter to be used.
+  --enable-cleartext-plugin 
+                      Enable/disable the clear text authentication plugin.
+  -e, --execute=name  Execute command and quit. (Disables --force and history
+                      file.)
+  -E, --vertical      Print the output of a query (rows) vertically.
+  -f, --force         Continue even if we get an SQL error.
+  --histignore=name   A colon-separated list of patterns to keep statements
+                      from getting logged into syslog and mysql history.
+  -G, --named-commands 
+                      Enable named commands. Named commands mean this program's
+                      internal commands; see mysql> help . When enabled, the
+                      named commands can be used from any line of the query,
+                      otherwise only from the first line, before an enter.
+                      Disable with --disable-named-commands. This option is
+                      disabled by default.
+  -i, --ignore-spaces Ignore space after function names.
+  --init-command=name Single SQL Command to execute when connecting to MySQL
+                      server. Will automatically be re-executed when
+                      reconnecting.
+  --init-command-add=name 
+                      Add SQL command to the list to execute when connecting to
+                      MySQL server. Will automatically be re-executed when
+                      reconnecting.
+  --local-infile      Enable/disable LOAD DATA LOCAL INFILE.
+  -b, --no-beep       Turn off beep on error.
+  -h, --host=name     Connect to host.
+  --dns-srv-name=name Connect to a DNS SRV resource
+  -H, --html          Produce HTML output.
+  -X, --xml           Produce XML output.
+  --line-numbers      Write line numbers for errors.
+                      (Defaults to on; use --skip-line-numbers to disable.)
+  -L, --skip-line-numbers 
+                      Don't write line number for errors.
+  -n, --unbuffered    Flush buffer after each query.
+  --column-names      Write column names in results.
+                      (Defaults to on; use --skip-column-names to disable.)
+  -N, --skip-column-names 
+                      Don't write column names in results.
+  --sigint-ignore     Ignore SIGINT (CTRL-C).
+  -o, --one-database  Ignore statements except those that occur while the
+                      default database is the one named at the command line.
+  --pager[=name]      Pager to use to display results. If you don't supply an
+                      option, the default pager is taken from your ENV variable
+                      PAGER. Valid pagers are less, more, cat [> filename],
+                      etc. See interactive help (\h) also. This option does not
+                      work in batch mode. Disable with --disable-pager. This
+                      option is disabled by default.
+  -p, --password[=name] 
+                      Password to use when connecting to server. If password is
+                      not given it's asked from the tty.
+  -,, --password1[=name] 
+                      Password for first factor authentication plugin.
+  -,, --password2[=name] 
+                      Password for second factor authentication plugin.
+  -,, --password3[=name] 
+                      Password for third factor authentication plugin.
+  -P, --port=#        Port number to use for connection or 0 for default to, in
+                      order of preference, my.cnf, $MYSQL_TCP_PORT,
+                      /etc/services, built-in default (3306).
+  --prompt=name       Set the mysql prompt to this value.
+  --protocol=name     The protocol to use for connection (tcp, socket, pipe,
+                      memory).
+  -q, --quick         Don't cache result, print it row by row. This may slow
+                      down the server if the output is suspended. Doesn't use
+                      history file.
+  -r, --raw           Write fields without conversion. Used with --batch.
+  --reconnect         Reconnect if the connection is lost. Disable with
+                      --disable-reconnect. This option is enabled by default.
+                      (Defaults to on; use --skip-reconnect to disable.)
+  -s, --silent        Be more silent. Print results with a tab as separator,
+                      each row on new line.
+  -S, --socket=name   The socket file to use for connection.
+  --server-public-key-path=name 
+                      File path to the server public RSA key in PEM format.
+  --get-server-public-key 
+                      Get server public key
+  --ssl-mode=name     SSL connection mode.
+  --ssl-ca=name       CA file in PEM format.
+  --ssl-capath=name   CA directory.
+  --ssl-cert=name     X509 cert in PEM format.
+  --ssl-cipher=name   SSL cipher to use.
+  --ssl-key=name      X509 key in PEM format.
+  --ssl-crl=name      Certificate revocation list.
+  --ssl-crlpath=name  Certificate revocation list path.
+  --tls-version=name  TLS version to use, permitted values are: TLSv1.2,
+                      TLSv1.3
+  --ssl-fips-mode=name 
+                      SSL FIPS mode (applies only for OpenSSL); permitted
+                      values are: OFF, ON, STRICT
+  --tls-ciphersuites=name 
+                      TLS v1.3 cipher to use.
+  --ssl-session-data=name 
+                      Session data file to use to enable ssl session reuse
+  --ssl-session-data-continue-on-failed-reuse 
+                      If set to ON, this option will allow connection to
+                      succeed even if session data cannot be reused.
+  --tls-sni-servername=name 
+                      The SNI server name to pass to server
+  -t, --table         Output in table format.
+  --tee=name          Append everything into outfile. See interactive help (\h)
+                      also. Does not work in batch mode. Disable with
+                      --disable-tee. This option is disabled by default.
+  -u, --user=name     User for login if not current user.
+  -U, --safe-updates  Only allow UPDATE and DELETE that uses keys.
+  -U, --i-am-a-dummy  Synonym for option --safe-updates, -U.
+  -v, --verbose       Write more. (-v -v -v gives the table output format).
+  -V, --version       Output version information and exit.
+  -w, --wait          Wait and retry if connection is down.
+  --connect-timeout=# Number of seconds before connection timeout.
+  --max-allowed-packet=# 
+                      The maximum packet length to send to or receive from
+                      server.
+  --net-buffer-length=# 
+                      The buffer size for TCP/IP and socket communication.
+  --select-limit=#    Automatic limit for SELECT when using --safe-updates.
+  --max-join-size=#   Automatic limit for rows in a join when using
+                      --safe-updates.
+  --show-warnings     Show warnings after every statement.
+  -j, --syslog        Log filtered interactive commands to syslog. Filtering of
+                      commands depends on the patterns supplied via histignore
+                      option besides the default patterns.
+  --plugin-dir=name   Directory for client-side plugins.
+  --default-auth=name Default authentication client-side plugin to use.
+  --binary-mode       By default, ASCII '\0' is disallowed and '\r\n' is
+                      translated to '\n'. This switch turns off both features,
+                      and also turns off parsing of all clientcommands except
+                      \C and DELIMITER, in non-interactive mode (for input
+                      piped to mysql or loaded using the 'source' command).
+                      This is necessary when processing output from mysqlbinlog
+                      that may contain blobs.
+  --connect-expired-password 
+                      Notify the server that this client is prepared to handle
+                      expired password sandbox mode.
+  --network-namespace=name 
+                      Network namespace to use for connection via tcp with a
+                      server.
+  --compression-algorithms=name 
+                      Use compression algorithm in server/client protocol.
+                      Valid values are any combination of
+                      'zstd','zlib','uncompressed'.
+  --zstd-compression-level=# 
+                      Use this compression level in the client/server protocol,
+                      in case --compression-algorithms=zstd. Valid range is
+                      between 1 and 22, inclusive. Default is 3.
+  --load-data-local-dir=name 
+                      Directory path safe for LOAD DATA LOCAL INFILE to read
+                      from.
+  --authentication-oci-client-config-profile=name 
+                      Specifies the configuration profile whose configuration
+                      options are to be read from the OCI configuration file.
+                      Default is DEFAULT.
+  --oci-config-file=name 
+                      Specifies the location of the OCI configuration file.
+                      Default for Linux is ~/.oci/config and %HOME/.oci/config
+                      on Windows.
+  --telemetry-client  Load the telemetry_client plugin.
+  --plugin-authentication-webauthn-client-preserve-privacy 
+                      Allows selection of discoverable credential to be used
+                      for signing challenge. default is false - implies
+                      challenge is signed by all credentials for given relying
+                      party.
+  --plugin-authentication-webauthn-device=# 
+                      Specifies what libfido2 device to use. 0 (the first
+                      device) is the default.
+  --register-factor=name 
+                      Specifies factor for which registration needs to be done
+                      for.
+
+Default options are read from the following files in the given order:
+/etc/my.cnf /etc/mysql/my.cnf /usr/etc/my.cnf ~/.my.cnf 
+The following groups are read: mysql client
+The following options may be given as the first argument:
+--print-defaults        Print the program argument list and exit.
+--no-defaults           Don't read default options from any option file,
+                        except for login file.
+--defaults-file=#       Only read default options from the given file #.
+--defaults-extra-file=# Read this file after the global files are read.
+--defaults-group-suffix=#
+                        Also read groups with concat(group, suffix)
+--login-path=#          Read this path from the login file.
+--no-login-paths        Don't read login paths from the login path file.
+
+Variables (--variable-name=value)
+and boolean options {FALSE|TRUE}                       Value (after reading options)
+------------------------------------------------------ -------------------
+auto-rehash                                            TRUE
+auto-vertical-output                                   FALSE
+bind-address                                           (No default value)
+binary-as-hex                                          FALSE
+character-sets-dir                                     (No default value)
+column-type-info                                       FALSE
+comments                                               TRUE
+compress                                               FALSE
+database                                               (No default value)
+default-character-set                                  auto
+delimiter                                              ;
+enable-cleartext-plugin                                FALSE
+vertical                                               FALSE
+force                                                  FALSE
+histignore                                             (No default value)
+named-commands                                         FALSE
+ignore-spaces                                          FALSE
+local-infile                                           FALSE
+no-beep                                                FALSE
+host                                                   (No default value)
+dns-srv-name                                           (No default value)
+html                                                   FALSE
+xml                                                    FALSE
+line-numbers                                           TRUE
+unbuffered                                             FALSE
+column-names                                           TRUE
+sigint-ignore                                          FALSE
+port                                                   0
+prompt                                                 mysql> 
+quick                                                  FALSE
+raw                                                    FALSE
+reconnect                                              FALSE
+socket                                                 /var/run/mysqld/mysqld.sock
+server-public-key-path                                 (No default value)
+get-server-public-key                                  FALSE
+ssl-ca                                                 (No default value)
+ssl-capath                                             (No default value)
+ssl-cert                                               (No default value)
+ssl-cipher                                             (No default value)
+ssl-key                                                (No default value)
+ssl-crl                                                (No default value)
+ssl-crlpath                                            (No default value)
+tls-version                                            (No default value)
+tls-ciphersuites                                       (No default value)
+ssl-session-data                                       (No default value)
+ssl-session-data-continue-on-failed-reuse              FALSE
+tls-sni-servername                                     (No default value)
+table                                                  FALSE
+user                                                   root
+safe-updates                                           FALSE
+i-am-a-dummy                                           FALSE
+wait                                                   FALSE
+connect-timeout                                        0
+max-allowed-packet                                     16777216
+net-buffer-length                                      16384
+select-limit                                           1000
+max-join-size                                          1000000
+show-warnings                                          FALSE
+plugin-dir                                             (No default value)
+default-auth                                           (No default value)
+binary-mode                                            FALSE
+connect-expired-password                               FALSE
+network-namespace                                      (No default value)
+compression-algorithms                                 (No default value)
+zstd-compression-level                                 3
+load-data-local-dir                                    (No default value)
+authentication-oci-client-config-profile               (No default value)
+oci-config-file                                        (No default value)
+telemetry-client                                       FALSE
+plugin-authentication-webauthn-client-preserve-privacy FALSE
+plugin-authentication-webauthn-device                  0
+register-factor                                        (No default value)
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> USE mydatabase;
+ERROR 1049 (42000): Unknown database 'mydatabase'
+mysql> exit
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ CREATE DATABASE mydatabase;
+CREATE: command not found
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -pOpenUAE@123
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 9
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> CREATE DATABASE mydatabase;
+Query OK, 1 row affected (0.07 sec)
+
+mysql> exit
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ cat datamodel2.sql | docker exec -i mysql-server mysql -uroot -pOpenUAE@123 mydatabase
+mysql: [Warning] Using a password on the command line interface can be insecure.
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 11
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> USE mydatabase;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> 
+mysql> SHOW TABLES;
++-----------------------------------+
+| Tables_in_mydatabase              |
++-----------------------------------+
+| Admin                             |
+| Allergies                         |
+| Appointment                       |
+| Appointment_Status                |
+| Attachment_Type                   |
+| Attachments                       |
+| Data_Access                       |
+| Data_Access_Type                  |
+| Dental_Chart                      |
+| Dental_Chart_Category             |
+| Dental_Chart_Status               |
+| Dental_History                    |
+| Discipline                        |
+| Doctor                            |
+| Finances                          |
+| Insurance                         |
+| Lab_Prescriptions                 |
+| Lab_Results                       |
+| Lab_Treatment                     |
+| Lab_Treatment_Teeth_Details       |
+| Medical_History                   |
+| Medical_History_Answer            |
+| Medical_History_Category          |
+| Medical_History_Health_Impression |
+| Medical_History_Question_Type     |
+| Medications                       |
+| Notification                      |
+| Notification_Status               |
+| Notification_Type                 |
+| Organization                      |
+| Organization_Type                 |
+| Patient                           |
+| Permissions                       |
+| Request                           |
+| Request_Status                    |
+| Request_Type                      |
+| Sys_Admin                         |
+| Teeth_Details                     |
+| User                              |
+| UserRole                          |
+| User_Activity_Status              |
++-----------------------------------+
+41 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Teeth_Details;
+ERROR 4031 (HY000): The client was disconnected by the server because of inactivity. See wait_timeout and interactive_timeout for configuring this behavior.
+No connection. Trying to reconnect...
+Connection id:    13
+Current database: mydatabase
+
+Empty set (0.02 sec)
+
+mysql> exit
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 14
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> SHOW TABLES;
+ERROR 1046 (3D000): No database selected
+mysql> exit
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker ps -a
+CONTAINER ID   IMAGE                                                                                                                                                                          COMMAND                  CREATED        STATUS        PORTS                                                                                                                             NAMES
+f0901513f07b   dev-peer0.org2.example.com-dentistry_1.0.1-473d834d6530e79e6fd92420b44227644d13bd43433ef733e0be8acd38b49a18-2f0edc622efb155065013bbc818333a925200a3018dd6fe5fc0f1bfd8c92ba49   "docker-entrypoint.s…"   27 hours ago   Up 27 hours                                                                                                                                     dev-peer0.org2.example.com-dentistry_1.0.1-473d834d6530e79e6fd92420b44227644d13bd43433ef733e0be8acd38b49a18
+8322dd6e66f0   dev-peer0.org1.example.com-dentistry_1.0.1-473d834d6530e79e6fd92420b44227644d13bd43433ef733e0be8acd38b49a18-defead5306a3223de026d2669353eb179470a5e3ff2fc5534461451e36dd1938   "docker-entrypoint.s…"   27 hours ago   Up 27 hours                                                                                                                                     dev-peer0.org1.example.com-dentistry_1.0.1-473d834d6530e79e6fd92420b44227644d13bd43433ef733e0be8acd38b49a18
+df2648421b94   hyperledger/fabric-tools:latest                                                                                                                                                "/bin/bash"              27 hours ago   Up 27 hours                                                                                                                                     cli
+a7e7e088cf93   hyperledger/fabric-peer:latest                                                                                                                                                 "peer node start"        27 hours ago   Up 27 hours   0.0.0.0:7051->7051/tcp, :::7051->7051/tcp, 0.0.0.0:9444->9444/tcp, :::9444->9444/tcp                                              peer0.org1.example.com
+50a617931793   hyperledger/fabric-peer:latest                                                                                                                                                 "peer node start"        27 hours ago   Up 27 hours   0.0.0.0:9051->9051/tcp, :::9051->9051/tcp, 7051/tcp, 0.0.0.0:9445->9445/tcp, :::9445->9445/tcp                                    peer0.org2.example.com
+98f1fc32a591   couchdb:3.3.2                                                                                                                                                                  "tini -- /docker-ent…"   27 hours ago   Up 27 hours   4369/tcp, 9100/tcp, 0.0.0.0:5984->5984/tcp, :::5984->5984/tcp                                                                     couchdb0
+8144452faf43   couchdb:3.3.2                                                                                                                                                                  "tini -- /docker-ent…"   27 hours ago   Up 27 hours   4369/tcp, 9100/tcp, 0.0.0.0:7984->5984/tcp, :::7984->5984/tcp                                                                     couchdb1
+6602cb8cebc6   hyperledger/fabric-orderer:latest                                                                                                                                              "orderer"                27 hours ago   Up 27 hours   0.0.0.0:7050->7050/tcp, :::7050->7050/tcp, 0.0.0.0:7053->7053/tcp, :::7053->7053/tcp, 0.0.0.0:9443->9443/tcp, :::9443->9443/tcp   orderer.example.com
+168a7b737894   hyperledger/fabric-ca:latest                                                                                                                                                   "sh -c 'fabric-ca-se…"   27 hours ago   Up 27 hours   0.0.0.0:7054->7054/tcp, :::7054->7054/tcp, 0.0.0.0:17054->17054/tcp, :::17054->17054/tcp                                          ca_org1
+2b18256baf17   hyperledger/fabric-ca:latest                                                                                                                                                   "sh -c 'fabric-ca-se…"   27 hours ago   Up 27 hours   0.0.0.0:8054->8054/tcp, :::8054->8054/tcp, 7054/tcp, 0.0.0.0:18054->18054/tcp, :::18054->18054/tcp                                ca_org2
+9f31491126d3   hyperledger/fabric-ca:latest                                                                                                                                                   "sh -c 'fabric-ca-se…"   27 hours ago   Up 27 hours   0.0.0.0:9054->9054/tcp, :::9054->9054/tcp, 7054/tcp, 0.0.0.0:19054->19054/tcp, :::19054->19054/tcp                                ca_orderer
+dafd0816f6d4   mysql:latest                                                                                                                                                                   "docker-entrypoint.s…"   2 weeks ago    Up 2 weeks    3306/tcp, 33060/tcp                                                                                                               mysql-server
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -pOpenUAE@123^C
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker cp datamodel2.sql mysql-server:/datamodel2.sql
+Successfully copied 10.8kB to mysql-server:/datamodel2.sql
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 15
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> SHOW TABLES;
+ERROR 1046 (3D000): No database selected
+mysql> exit
+Bye
+openuae@openuae-Precision-5820-Tower:~/BC_Dentistry_temp/off_chain_database$ docker exec -it mysql-server mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 16
+Server version: 9.0.1 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> CREATE DATABASE mydatabase;
+ERROR 1007 (HY000): Can't create database 'mydatabase'; database exists
+mysql> USE mydatabase;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> SHOW TABLES;
++-----------------------------------+
+| Tables_in_mydatabase              |
++-----------------------------------+
+| Admin                             |
+| Allergies                         |
+| Appointment                       |
+| Appointment_Status                |
+| Attachment_Type                   |
+| Attachments                       |
+| Data_Access                       |
+| Data_Access_Type                  |
+| Dental_Chart                      |
+| Dental_Chart_Category             |
+| Dental_Chart_Status               |
+| Dental_History                    |
+| Discipline                        |
+| Doctor                            |
+| Finances                          |
+| Insurance                         |
+| Lab_Prescriptions                 |
+| Lab_Results                       |
+| Lab_Treatment                     |
+| Lab_Treatment_Teeth_Details       |
+| Medical_History                   |
+| Medical_History_Answer            |
+| Medical_History_Category          |
+| Medical_History_Health_Impression |
+| Medical_History_Question_Type     |
+| Medications                       |
+| Notification                      |
+| Notification_Status               |
+| Notification_Type                 |
+| Organization                      |
+| Organization_Type                 |
+| Patient                           |
+| Permissions                       |
+| Request                           |
+| Request_Status                    |
+| Request_Type                      |
+| Sys_Admin                         |
+| Teeth_Details                     |
+| User                              |
+| UserRole                          |
+| User_Activity_Status              |
++-----------------------------------+
+41 rows in set (0.00 sec)
+
+mysql> SELECT * FROM Teeth_Details;
+Empty set (0.00 sec)
+
+mysql> SELECT * FROM Admin;
+Empty set (0.00 sec)
+
+mysql> DESCRIBE Teeth_Details;
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| ID            | int          | NO   | PRI | NULL    |       |
+| Order_ID      | int          | YES  | MUL | NULL    |       |
+| Question_Type | varchar(255) | YES  |     | NULL    |       |
+| Answer        | text         | YES  |     | NULL    |       |
+| Note          | text         | YES  |     | NULL    |       |
+| Created_Date  | date         | YES  |     | NULL    |       |
++---------------+--------------+------+-----+---------+-------+
+6 rows in set (0.01 sec)
+
+mysql> DESCRIBE UserRole;
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| Role_ID       | int          | NO   | PRI | NULL    |       |
+| Name          | varchar(255) | YES  |     | NULL    |       |
+| Access_Level  | int          | YES  |     | NULL    |       |
+| IsActive      | tinyint(1)   | YES  |     | NULL    |       |
+| Created_Date  | date         | YES  |     | NULL    |       |
+| Modified_Date | date         | YES  |     | NULL    |       |
++---------------+--------------+------+-----+---------+-------+
+6 rows in set (0.00 sec)
+
+mysql> DESCRIBE Permissions;
++-------+------+------+-----+---------+-------+
+| Field | Type | Null | Key | Default | Extra |
++-------+------+------+-----+---------+-------+
+| ID    | int  | NO   | PRI | NULL    |       |
++-------+------+------+-----+---------+-------+
+1 row in set (0.00 sec)
+
+mysql> DESCRIBE Dental_Chart;
++--------------+---------------+------+-----+---------+-------+
+| Field        | Type          | Null | Key | Default | Extra |
++--------------+---------------+------+-----+---------+-------+
+| ID           | int           | NO   | PRI | NULL    |       |
+| Category     | varchar(255)  | YES  |     | NULL    |       |
+| Sub_Category | varchar(255)  | YES  |     | NULL    |       |
+| Code         | varchar(255)  | YES  |     | NULL    |       |
+| Site         | varchar(255)  | YES  |     | NULL    |       |
+| Suf          | varchar(255)  | YES  |     | NULL    |       |
+| Status       | varchar(255)  | YES  |     | NULL    |       |
+| Pre_Auth     | varchar(255)  | YES  |     | NULL    |       |
+| Phase        | varchar(255)  | YES  |     | NULL    |       |
+| Discipline   | varchar(255)  | YES  |     | NULL    |       |
+| Diagnoses    | text          | YES  |     | NULL    |       |
+| Note         | text          | YES  |     | NULL    |       |
+| Estimate     | decimal(10,2) | YES  |     | NULL    |       |
+| Doctor_ID    | int           | YES  |     | NULL    |       |
+| Audit_Date   | date          | YES  |     | NULL    |       |
+| Created_Date | date          | YES  |     | NULL    |       |
++--------------+---------------+------+-----+---------+-------+
+16 rows in set (0.01 sec)
+
+mysql> DESCRIBE Dental_Chart_Category;
++----------+--------------+------+-----+---------+-------+
+| Field    | Type         | Null | Key | Default | Extra |
++----------+--------------+------+-----+---------+-------+
+| ID       | int          | NO   | PRI | NULL    |       |
+| Category | varchar(255) | YES  |     | NULL    |       |
++----------+--------------+------+-----+---------+-------+
+2 rows in set (0.00 sec)
+
+mysql> ^C
+mysql> ^C
+mysql> DESCRIBE Dental_History;
+ERROR 4031 (HY000): The client was disconnected by the server because of inactivity. See wait_timeout and interactive_timeout for configuring this behavior.
+No connection. Trying to reconnect...
+Connection id:    17
+Current database: mydatabase
+
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| ID            | int          | NO   | PRI | NULL    |       |
+| Category      | varchar(255) | YES  |     | NULL    |       |
+| Question_Type | varchar(255) | YES  |     | NULL    |       |
+| Answer        | text         | YES  |     | NULL    |       |
+| Note          | text         | YES  |     | NULL    |       |
+| Verified_Date | date         | YES  |     | NULL    |       |
+| Is_Approved   | tinyint(1)   | YES  |     | NULL    |       |
+| Modified_Date | date         | YES  |     | NULL    |       |
+| Created_Date  | date         | YES  |     | NULL    |       |
++---------------+--------------+------+-----+---------+-------+
+9 rows in set (0.03 sec)
+
+mysql> USE mydatabase;
+Database changed
+mysql> DESCRIBE Dental_History;
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| ID            | int          | NO   | PRI | NULL    |       |
+| Category      | varchar(255) | YES  |     | NULL    |       |
+| Question_Type | varchar(255) | YES  |     | NULL    |       |
+| Answer        | text         | YES  |     | NULL    |       |
+| Note          | text         | YES  |     | NULL    |       |
+| Verified_Date | date         | YES  |     | NULL    |       |
+| Is_Approved   | tinyint(1)   | YES  |     | NULL    |       |
+| Modified_Date | date         | YES  |     | NULL    |       |
+| Created_Date  | date         | YES  |     | NULL    |       |
++---------------+--------------+------+-----+---------+-------+
+9 rows in set (0.00 sec)
+
+mysql> SELECT * FROM User;
++----+------------+-----------+--------------------------------------------------------------+---------------------+----------------+---------+--------------+----------+-----------------+
+| ID | First_Name | Last_Name | Password                                                     | Email               | Contact_Number | Role_ID | Created_Date | IsActive | Last_Login_Date |
++----+------------+-----------+--------------------------------------------------------------+---------------------+----------------+---------+--------------+----------+-----------------+
+|  9 | Admin2     | User2     | $2b$10$v5lsbuAYwdZQzZ/hN.FVL.6lYJwnZLBjfD6sW66/H8GqMXFtncwGK | admin2@gmail.com    | 1234567890     |       2 | 2025-02-03   |        1 | 2025-03-10      |
+| 10 | Admin1     | User1     | $2b$10$WEDbeiz3VjsRUcgYiKhw..2oTKmGE/lxeMNV2Haqx05MlASU7/hI2 | admin1@gmail.com    | 1234567890     |       2 | 2025-02-03   |        1 | 2025-02-03      |
+| 15 | Alice      | Wong      | $2b$10$VDdk6Dc75k7jJp.bNsDjM.scicJoNlBJGqdzAs2b0Layd5sN1so3G | doctor1@example.com | 0509876543     |       3 | 2025-02-03   |        1 | 2025-03-10      |
+| 16 | Bob        | Smith     | $2b$10$tg8rV6u4PeIxDKy.TcoB.eIHsV3TLABYxSs3ZgPR9CHPVgFs4M42a | doctor2@example.com | 0509871234     |       3 | 2025-02-03   |        1 | 2025-03-06      |
++----+------------+-----------+--------------------------------------------------------------+---------------------+----------------+---------+--------------+----------+-----------------+
+4 rows in set (0.01 sec)
+
+mysql> SELECT * FROM UserRole;
++---------+-----------+--------------+----------+--------------+---------------+
+| Role_ID | Name      | Access_Level | IsActive | Created_Date | Modified_Date |
++---------+-----------+--------------+----------+--------------+---------------+
+|       1 | Sys Admin |            1 |        1 | 2025-01-22   | NULL          |
+|       2 | Admin     |            2 |        1 | 2025-01-22   | NULL          |
+|       3 | Doctor    |            3 |        1 | 2025-01-22   | NULL          |
+|       4 | Patient   |            4 |        1 | 2025-01-22   | NULL          |
++---------+-----------+--------------+----------+--------------+---------------+
+4 rows in set (0.02 sec)
+
+

@@ -1,0 +1,36 @@
+test:
+  name: ReadPatientBenchmark
+  description: Test the ReadPatient function of dentalcontract chaincode
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    - label: read-10
+      description: 10 ReadPatient transactions
+      txNumber: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+    - label: read-50
+      description: 50 ReadPatient transactions
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+
+    - label: read-100
+      description: 100 ReadPatient transactions
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js

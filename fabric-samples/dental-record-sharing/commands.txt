@@ -1,0 +1,184 @@
+
+./network.sh down 
+
+./network.sh up
+
+./network.sh up createChannel -c mychannel -ca
+
+# deploy javascript chaincode basic on mychannel 
+./network.sh deployCC -ccn basic -ccp ../dental-record-sharing/chaincode-javascript -ccl javascript
+
+# add peer binaries to your CLI Path:
+export PATH=${PWD}/../bin:$PATH
+
+# set the FABRIC_CFG_PATH to point to the core.yaml file in the fabric-samples repository:
+export FABRIC_CFG_PATH=$PWD/../config/
+
+# set the environment variables that allow you to operate the peer CLI as Org1:
+# Environment variables for Org1
+
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID=Org1MSP
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+
+# Environment variables for Org2
+
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID=Org2MSP
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+export CORE_PEER_ADDRESS=localhost:9051
+
+----------------------------------------------------------------------------------------------------------------------------------------
+# invoke InitLedger function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"InitLedger","Args":[]}'
+
+----------------------------------------------------------------------------------------------------------------------------------------
+# query GetAllDoctors function
+peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllDoctors"]}'
+
+# query GetAllPatients function
+peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllPatients"]}'
+
+----------------------------------------------------------------------------------------------------------------------------------------
+# query ReadDoctor function 
+peer chaincode query -C mychannel -n basic -c '{"Args":["ReadDoctor","Doctor2"]}'
+
+# query ReadPatient function
+peer chaincode query -C mychannel -n basic -c '{"Args":["ReadPatient","Patient1"]}'
+
+------------------------------------------------------------------------------------------------------------------
+# invoke addPatient function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"addPatient","Args":["Patient4","Sara","Ahmed","1992-05-10","Female","1122334455","sara.ahmed@example.com","0501237890","789 Cedar Road, Dubai","2024-10-04", "1",""]}'
+
+# invoke addDoctor function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"addDoctor","Args":["Doctor3","Mona","Jones","Pediatric Dentist","Dental Clinic C","mona.jones@example.com","0509871235","2024-10-04","[]"]}'
+
+------------------------------------------------------------------------------------------------------------------
+# invoke deleteDoctor function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"DeleteDoctor","Args":["doc001"]}'
+
+# invoke deletePatient function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"DeletePatient","Args":["Patient4"]}'
+
+------------------------------------------------------------------------------------------------------------------
+# invoke UpdatePatientInfo function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"UpdateDoctorInfo","Args":["Doctor1","Alice","Wong","Orthodontist","New Dental Clinic","1","alice.wong@example.com","0509876543","2024-10-04","[\"Patient1\",\"Patient4\"]"]}'
+
+# invoke UpdateDoctorInfo function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"UpdateDoctorInfo","Args":["Doctor1","Alice","Wong","Orthodontist","New Dental Clinic","alice.wong@example.com","0509876543","2024-10-04","[\"Patient1\",\"Patient4\"]"]}'
+
+-----------------------------------------------------------------------------------------------------------------
+# invoke AddDentalChart function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"addDentalChartEntry","Args":["Patient3","12","MODBL","Restorative","Filling","R123","E","approved","2","General Dentistry","Cavity","Cavity on molar 12, requires deeper filling.","250","Doctor1","2024-10-04","2024-10-01"]}'
+
+# query getDentalChartEntry function
+peer chaincode query -C mychannel -n basic -c '{"function":"getDentalChartEntry","Args":["Patient1", "12", "MODBL"]}'
+
+# query getAllDentalChartData function
+peer chaincode query -C mychannel -n basic -c '{"function":"getAllDentalChartData","Args":["Patient1"]}'
+
+----------------------------------------------------------------------------------------------------------------
+# invoke AddMedicalRecord function
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c  '{"function":"AddMedicalRecord","Args":["Patient3", "{\"allergies\":[{\"allergyId\":\"A001\",\"name\":\"Peanuts\",\"description\":\"Allergic reaction to peanuts, causing potential anaphylaxis.\"}],\"medications\":[{\"medicationId\":\"11111113\",\"drugName\":\"Aspirin\",\"type\":\"Antiplatelet\",\"doses\":\"81 mg daily\",\"strength\":\"81\",\"intakeTime\":\"Morning\",\"frequency\":5}]}"]}'
+
+# invoke UpdateMedicalRecord function
+
+# query GetMedicalRecords function
+peer chaincode query -C mychannel -n basic -c '{"function":"GetMedicalRecords","Args":["Patient2"]}'
+
+----------------------------------------------------------------------------------------------------------------
+# query getPatientsAssignedToDoctor function
+peer chaincode query -C mychannel -n basic -c '{"function":"getPatientsAssignedToDoctor","Args":["Doctor1"]}'
+
+# invoke assignPatientToDoctor function 
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"assignPatientToDoctor","Args":["Patient1", "Doctor2"]}'
+
+-------------------------------------------------------------------------------------------------------------------------------------
+# invoke Request Data Access "Doctor1", "Patient1", ""
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls \
+--cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
+-C mychannel -n basic \
+--peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" \
+--peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" \
+-c '{"function":"RequestDataAccess","Args":["Doctor1", "Patient1", "2"]}'
+
+67b957f254a68c1c9f42f408d2745cc982e8acf8bbd0cae06bc1f2e15dae9ca6
+
+# Query GetRequestsForAdmin clinic 2
+peer chaincode query -C mychannel -n basic -c '{"function":"GetRequestsForAdmin","Args":["2"]}'
+
+# Invoke  ApproveRequest(ctx, adminID, requestID, adminClinicID) 
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"ApproveRequest","Args":["Admin1","67b957f254a68c1c9f42f408d2745cc982e8acf8bbd0cae06bc1f2e15dae9ca6", "2"]}'
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"ProvideConsent","Args":["Patient1","0bdfcb550be64ce76056b26fffa13d30627b457e76e8ffe6bc0b9e868def3ee0"]}'
+
+ peer chaincode query -C mychannel -n basic -c '{"function":"GetPatientData","Args":["Doctor1","Patient1"]}'
+
+ peer chaincode query -C mychannel -n basic -c '{"function":"GetAllRequestsForPatient","Args":["Patient1"]}'
+
+
+
+
+# test chaincode : dentalRecordContract.test.js 
+
+# Explanation of the Test Cases:
+
+    Initialization Test: Checks if the ledger initializes correctly with predefined doctors and patients.
+    Adding a Doctor: Tests the functionality of adding a new doctor and verifies the data.
+    Adding a Patient: Tests the functionality of adding a new patient and verifies the data.
+    Updating a Doctor: Tests updating an existing doctor's information.
+    Updating a Patient: Tests updating an existing patient's information.
+    Deleting a Doctor: Tests the deletion of an existing doctor and checks for the correct error message when reading a deleted doctor.
+    Deleting a Patient: Tests the deletion of an existing patient and checks for the correct error message when reading a deleted patient.
+    Adding Existing Doctor Error: Verifies that attempting to add a doctor that already exists throws an error.
+    Adding Existing Patient Error: Verifies that attempting to add a patient that already exists throws an error.
+# Running the Tests
+
+# Install a compatible version of Node.js:
+nvm install 18.17.0
+nvm use 18.17.0  
+
+# Ensure you have the required dependencies installed and then run the tests using Mocha:
+
+npm install --save-dev mocha chai fabric-network json-stringify-deterministic sort-keys-recursive
+mocha dentalRecordContract.test.js
+
+This should give you a good coverage of the functionalities in your DentalRecordContract.
+
+
+
+
+
+
+
+
+
+
+
+#Troubleshooting
+
+#Incase if any of the commands fail due to configurations or the network was not brought down properly use the following commands to clear the corrupted docker images and fix the issue.
+
+    # Stop the containers.
+
+docker stop $(docker ps -a -q)
+
+    # Remove the containers
+
+docker rm -f $(docker ps -aq)
+
+    # Remove all unused images not just dangling ones
+
+docker system prune -a
+
+    # Remove all unused local volumes
+
+docker volume prune
+
+    # Restart the docker.
+
+    # Once the docker is up ,open a new terminal and download the images. (same as Step 3 in Bring up the network section)
+
+ curl -sSL https://bit.ly/2ysbOFE | bash -s

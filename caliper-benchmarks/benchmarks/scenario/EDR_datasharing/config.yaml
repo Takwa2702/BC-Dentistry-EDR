@@ -1,0 +1,172 @@
+test:
+  name: ReadWriteDeleteBenchmark
+  description: Benchmark add, read, and delete functions for patients
+  workers:
+    type: local
+    number: 1
+
+  rounds:
+    # WRITE + DELETE: Add 1, then delete 1
+    - label: write-1
+      description: Add 1 patient
+      txNumber: 1
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/addPatient.js
+
+    - label: delete-1
+      description: Delete 1 patient
+      txNumber: 1
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+
+    # WRITE + DELETE: Add 10, then delete 10
+    - label: write-10
+      description: Add 10 patients
+      txNumber: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/addPatient.js
+
+    - label: delete-10
+      description: Delete 10 patients
+      txNumber: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+
+    # WRITE + DELETE: Add 50, then delete 50
+    - label: write-50
+      description: Add 50 patients
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/addPatient.js
+
+    - label: delete-50
+      description: Delete 50 patients
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+
+    # WRITE + DELETE: Add 100, then delete 100
+    - label: write-100
+      description: Add 100 patients
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/addPatient.js
+
+    - label: delete-100
+      description: Delete 100 patients
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+
+    # WRITE + DELETE: Add 200, then delete 200
+    - label: write-200
+      description: Add 200 patients
+      txNumber: 200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/addPatient.js
+
+    - label: delete-200
+      description: Delete 200 patients
+      txNumber: 200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+
+    # READ ONLY ROUNDS
+    - label: read-1
+      description: Read 1 patient
+      txNumber: 1
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+
+    - label: read-10
+      description: Read 10 patients
+      txNumber: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+
+    - label: read-50
+      description: Read 50 patients
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+
+    - label: read-100
+      description: Read 100 patients
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+
+    - label: read-200
+      description: Read 200 patients
+      txNumber: 200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 40
+      workload:
+        module: benchmarks/scenario/EDR_datasharing/readPatient.js
+
+
+monitors:
+  resource:
+  - module: docker
+    options:
+      interval: 5
+      containers:
+        - all
