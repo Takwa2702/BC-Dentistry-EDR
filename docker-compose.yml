@@ -1,0 +1,80 @@
+# =============================================================================
+# Blockchain-Based EDR System — Off-chain Services
+# =============================================================================
+# This compose file brings up the off-chain dependencies (MySQL) and, optionally,
+# the two Node.js API services.
+#
+# It does NOT start the Hyperledger Fabric network. Fabric is launched separately
+# via fabric-samples/test-network/network.sh (see docs/SETUP.md, Step 1).
+#
+# Usage:
+#   1. Copy .env.example files to .env in each service folder and fill in values.
+#   2. Set MYSQL_ROOT_PASSWORD below (or via a .env file in this directory).
+#   3. docker compose up -d mysql        # MySQL only
+#      docker compose up -d              # MySQL + both APIs
+# =============================================================================
+
+services:
+
+  mysql:
+    image: mysql:9.0.1
+    container_name: edr-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-CHANGE_ME}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mydatabase}
+    ports:
+      - "3306:3306"
+    volumes:
+      - edr-mysql-data:/var/lib/mysql
+      # Schema + seed data are auto-imported on first container creation.
+      # Files in this folder run in alphabetical order.
+      - ./database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-CHANGE_ME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Database API (off-chain). Reads/writes clinical data in MySQL.
+  # Comment this block out if you prefer to run `node server.js` manually.
+  # ---------------------------------------------------------------------------
+  database-api:
+    build:
+      context: ./backend
+    container_name: edr-database-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override host so the API reaches MySQL by service name inside the network
+      DB_HOST: mysql
+    ports:
+      - "3001:3001"
+
+  # ---------------------------------------------------------------------------
+  # Blockchain API. Talks to the Fabric network via the Fabric SDK.
+  # NOTE: This service needs the Fabric network running on the host and a valid
+  # connection profile + wallet (see docs/SETUP.md, Step 5). Running it in a
+  # container requires host networking so it can reach localhost:7051/9051.
+  # For most testing it is simpler to run `node index.js` directly on the host.
+  # The block below is provided for reference; uncomment if you containerize it.
+  # ---------------------------------------------------------------------------
+  # blockchain-api:
+  #   build:
+  #     context: ./dental-backend
+  #   container_name: edr-blockchain-api
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   env_file:
+  #     - ./dental-backend/.env
+  #   volumes:
+  #     - ./dental-backend/connection:/app/connection
+  #     - ./dental-backend/wallet:/app/wallet
+
+volumes:
+  edr-mysql-data:

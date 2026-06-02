@@ -57,7 +57,7 @@ node server.js
 # if database container down, just start it 
 docker start 55c61e4f72f7
 docker exec -it 55c61e4f72f7 mysql -uroot -p
-# password : OpenUAE@123
+# password : <DB_PASSWORD>
 
 mysql> SHOW DATABASES;
 

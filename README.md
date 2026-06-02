@@ -133,7 +133,7 @@ edr-blockchain/
   │  Channel:    mychannel      │  │  Container: 55c61e4f72f7      │
   │  Chaincode:  basic          │  │  Database:  mydatabase        │
   │  Org1 (Clinic A): 2 peers   │  │  User:      root              │
-  │  Org2 (Clinic B): 2 peers   │  │  Pass:      OpenUAE@123       │
+  │  Org2 (Clinic B): 2 peers   │  │  Pass:      <DB_PASSWORD>       │
   │  Ordering:   Raft           │  └───────────────────────────────┘
   └─────────────────────────────┘
 ```
@@ -372,7 +372,7 @@ To inspect the database directly:
 
 ```bash
 docker exec -it 55c61e4f72f7 mysql -uroot -p
-# Password: OpenUAE@123
+# Password: <DB_PASSWORD>
 
 mysql> SHOW DATABASES;
 mysql> USE mydatabase;
@@ -590,7 +590,7 @@ docker start 55c61e4f72f7
 
 # Access MySQL
 docker exec -it 55c61e4f72f7 mysql -uroot -p
-# Password: OpenUAE@123
+# Password: <DB_PASSWORD>
 ```
 
 ### Key queries
@@ -607,7 +607,7 @@ SELECT * FROM Appointment;
 ### Import schema on fresh setup
 
 ```bash
-docker exec -i 55c61e4f72f7 mysql -uroot -pOpenUAE@123 mydatabase < database/schema.sql
+docker exec -i 55c61e4f72f7 mysql -uroot -p<DB_PASSWORD> mydatabase < database/schema.sql
 ```
 
 ---
@@ -685,7 +685,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=mydatabase
 DB_USER=root
-DB_PASSWORD=OpenUAE@123
+DB_PASSWORD=<DB_PASSWORD>
 JWT_SECRET=CHANGE_ME
 ```
 
