@@ -340,6 +340,9 @@ peer chaincode query -C mychannel -n basic -c '{"function":"getDentalFiles","Arg
 ```bash
 cd dental-backend
 
+# Create directories if they don't exist (first clone only)
+mkdir -p connection wallet
+
 # Remove stale wallet and connection profile (required on every fresh network start)
 rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
 
@@ -495,6 +498,7 @@ peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.exa
 # TERMINAL 2 — Blockchain API  (http://localhost:8081)
 ###############################################################################
 cd dental-backend
+mkdir -p connection wallet
 rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
 cp ../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json connection/
 node enrollAdmin.js
@@ -768,6 +772,7 @@ docker volume prune -f && docker network prune -f
 
 ```bash
 cd dental-backend
+mkdir -p connection wallet
 rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
 cp ../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json connection/
 node enrollAdmin.js && node registerUser.js && node index.js
