@@ -192,12 +192,22 @@ chmod +x install-fabric.sh
 cd ..
 ```
 
-Verify:
+Verify all 10 binaries are present:
 
 ```bash
-./fabric-samples/bin/peer version
-# peer: Version: v2.5.4
+ls fabric-samples/bin/
+# configtxgen  configtxlator  cryptogen  discover
+# fabric-ca-client  fabric-ca-server  ledgerutil  orderer  osnadmin  peer
 ```
+
+> **If `fabric-ca-client` is missing** (the download can time out on slow connections):
+> ```bash
+> # Re-try just the CA binary download
+> cd fabric-samples
+> ./install-fabric.sh --ca-version 1.5.7 binary
+> cd ..
+> ```
+> If it still fails, copy the binaries from another machine that already has them.
 
 ---
 
