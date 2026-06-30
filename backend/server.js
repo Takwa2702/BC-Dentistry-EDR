@@ -4,38 +4,37 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const app = express();
-const SECRET_KEY = '9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1d0c9b8a7f6e5d4c3b2a1d0c9b8a'; // Replace with an environment variable for production
+require('dotenv').config();
 
-// // Set CORS options to allow requests from your frontend
-// const corsOptions = {
-//     origin: 'http://localhost:5174',  // Only allow requests from this origin
-//     optionsSuccessStatus: 200 // Legacy browsers support
-// };
+const app = express();
+const SECRET_KEY = process.env.JWT_SECRET || '9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1d0c9b8a7f6e5d4c3b2a1d0c9b8a';
+
 const corsOptions = {
-    origin: '*',  // Allow requests from any domain
+    origin: '*',
     optionsSuccessStatus: 200
 };
 
-
 app.use(cors(corsOptions));
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json());
 
-// Set up MySQL connection with your database details
-const db = mysql.createConnection({
-    host: "mysql-server",//"172.17.0.2", // Replace with your database host
-    user: 'root', // Replace with your MySQL username
-    password: 'OpenUAE@123', // Replace with your MySQL password
-    database: 'mydatabase' // Replace with your database name
+// Connection pool — handles reconnects automatically, reads config from .env
+const db = mysql.createPool({
+    host:     process.env.DB_HOST     || 'localhost',
+    port:     process.env.DB_PORT     || 3306,
+    user:     process.env.DB_USER     || 'root',
+    password: process.env.DB_PASSWORD || 'CHANGE_ME',
+    database: process.env.DB_NAME     || 'mydatabase',
+    waitForConnections: true,
+    connectionLimit: 10,
 });
 
-// Log connection success or errors
-db.connect((err) => {
+db.getConnection((err, connection) => {
     if (err) {
         console.error('Error connecting to the database:', err);
         return;
     }
     console.log('Connected to the MySQL database');
+    connection.release();
 });
 
 
@@ -601,6 +600,7 @@ app.get('/users', (req, res) => {
 // app.listen(8080, () => {
 //     console.log("listening on port 8080");
 // }); 
-app.listen(8080, '0.0.0.0', () => {
-    console.log("listening on port 8080");
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`listening on port ${PORT}`);
 });
