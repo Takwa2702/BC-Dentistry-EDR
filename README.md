@@ -18,7 +18,7 @@
    - [Step 3 — Set Peer CLI Environment](#step-3--set-peer-cli-environment)
    - [Step 4 — Initialize and Test the Ledger](#step-4--initialize--test-the-ledger)
    - [Step 5 — Blockchain API](#step-5--blockchain-api-dental-backend)
-   - [Step 6 — Database and SQL API](#step-6--database--sql-api-serverjs)
+   - [Step 6 — Database and SQL API](#step-6--database--sql-api-backend)
    - [Step 7 — Web Application](#step-7--web-application-reactjs)
    - [Step 8 — Mobile Application](#step-8--mobile-application-expo)
 6. [Quick Reference — All Commands](#6-quick-reference--all-commands)
@@ -27,7 +27,7 @@
 9. [Database Reference](#9-database-reference)
 10. [Performance Benchmarking — Caliper](#10-performance-benchmarking--hyperledger-caliper)
 11. [Environment Variables](#11-environment-variables)
-12. [Test Credentials](#12-user-roles--test-credentials)
+12. [User Roles & Test Credentials](#12-user-roles--test-credentials)
 13. [Troubleshooting](#13-troubleshooting)
 
 ---
@@ -50,65 +50,59 @@ This system provides a **decentralized, consent-based, patient-centric** Electro
 ## 2. Repository Structure
 
 ```
-edr-blockchain/
+BC-Dentistry-EDR/
 │
-├── fabric-samples/                          ← Hyperledger Fabric (clone separately)
+├── fabric-samples/                          ← Hyperledger Fabric test-network
 │   ├── bin/                                 ← peer / orderer binaries
 │   ├── config/                              ← core.yaml
 │   └── test-network/
 │       ├── network.sh                       ← Main network script
 │       └── organizations/                   ← Auto-generated crypto (gitignored)
 │
-├── dental-record-sharing/
-│   └── chaincode-javascript/               ← JavaScript chaincode (deployed as 'basic')
+├── dental-record-sharing/                   ← (deploy alongside this repo)
+│   └── chaincode-javascript/               ← JavaScript chaincode deployed as 'basic'
 │       ├── index.js
 │       ├── package.json
 │       └── lib/
 │           └── dentalRecordSharing.js
 │
-├── dental-backend/                          ← Node.js Blockchain API
+├── dental-backend/                          ← Blockchain API (Hyperledger Fabric SDK)
 │   ├── connection/
 │   │   └── connection-org1.json            ← Copied at runtime from test-network
 │   ├── wallet/                              ← Fabric identities (gitignored)
 │   ├── enrollAdmin.js
 │   ├── registerUser.js
-│   ├── index.js                             ← API entry point
+│   ├── index.js                             ← API entry point  (port 8081)
 │   ├── .env.example
 │   └── package.json
 │
-├── dental-database-backend/                 ← Node.js Database API
-│   ├── server.js                            ← API entry point
+├── backend/                                 ← Database API (MySQL / Express)
+│   ├── server.js                            ← API entry point  (port 8080)
+│   ├── Dockerfile
 │   ├── .env.example
 │   └── package.json
 │
-├── dental-frontend/                         ← React.js (Vite) Web App
+├── bc-dentistry-frontend/                   ← React.js (Vite) Web App
 │   ├── src/
 │   ├── .env.example
 │   └── package.json
 │
-├── BC-Dentistry-Mobile-App/                 ← Expo Mobile App
-│   │                                          (github.com/amxr21/BC-Dentistry-Mobile-App)
-│   ├── src/screens/
+├── BC-Dentistry-Mobile-App/                 ← Expo Mobile App (React Native)
+│   ├── app/
 │   ├── app.json
 │   └── package.json
 │
 ├── database/
-│   └── schema.sql                           ← Full MySQL schema
+│   └── dump.sql                             ← Full MySQL schema + seed data
 │
-├── caliper/                                 ← Hyperledger Caliper benchmarks
-│   ├── benchmarks/
-│   ├── networks/
-│   └── workloads/
+├── caliper-benchmarks/                      ← Hyperledger Caliper benchmarks
 │
 ├── docs/
-│   ├── BRD-EDR-001_Blockchain_EDR_System.docx
-│   └── SRS-EDR-001_Blockchain_EDR_System.docx
+│   └── SETUP.md                             ← Detailed handover guide
 │
-├── .gitignore
+├── docker-compose.yml                       ← MySQL + Database API (off-chain services)
 └── README.md
 ```
-
-> **Mobile app repo:** https://github.com/amxr21/BC-Dentistry-Mobile-App
 
 ---
 
@@ -123,18 +117,19 @@ edr-blockchain/
                    │ HTTP / REST               │ HTTP / REST
        ┌───────────▼──────────┐    ┌───────────▼──────────────────┐
        │  BLOCKCHAIN API      │    │  DATABASE API                 │
-       │  dental-backend      │    │  dental-database-backend      │
+       │  dental-backend/     │    │  backend/                     │
        │  index.js            │    │  server.js                    │
-       │  Fabric SDK · JWT    │    │  MySQL · REST                 │
+       │  Port: 8081          │    │  Port: 8080                   │
+       │  Fabric SDK · JWT    │    │  MySQL · REST · JWT           │
        └───────────┬──────────┘    └───────────┬──────────────────┘
                    │ Fabric SDK                 │ SQL
   ┌────────────────▼────────────┐  ┌────────────▼──────────────────┐
   │  HYPERLEDGER FABRIC         │  │  MYSQL DATABASE               │
-  │  Channel:    mychannel      │  │  Container: 55c61e4f72f7      │
+  │  Channel:    mychannel      │  │  Container: edr-mysql         │
   │  Chaincode:  basic          │  │  Database:  mydatabase        │
   │  Org1 (Clinic A): 2 peers   │  │  User:      root              │
-  │  Org2 (Clinic B): 2 peers   │  │  Pass:      <DB_PASSWORD>       │
-  │  Ordering:   Raft           │  └───────────────────────────────┘
+  │  Org2 (Clinic B): 2 peers   │  └───────────────────────────────┘
+  │  Ordering:   Raft           │
   └─────────────────────────────┘
 ```
 
@@ -147,7 +142,9 @@ edr-blockchain/
 | Tool | Version |
 |------|---------|
 | Docker Engine | 26.0.0+ |
+| Docker Compose | v2+ |
 | Node.js | 22.5.1 |
+| npm | 10+ |
 | Go | 1.21.8 |
 | Expo CLI | latest |
 
@@ -161,43 +158,45 @@ sudo apt-get update && sudo apt-get install -y curl git wget build-essential jq
 curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
 sudo usermod -aG docker $USER && newgrp docker
 
-# Node.js v22
+# Node.js v22 via nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 source ~/.bashrc
 nvm install 22 && nvm use 22
 
-# Go
+# Go 1.21
 wget https://go.dev/dl/go1.21.8.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.21.8.linux-amd64.tar.gz
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
 
-# Expo
+# Expo CLI
 npm install -g expo-cli
 ```
 
-### Clone the Project
+### Clone the Repository
 
 ```bash
-git clone https://github.com/<your-org>/edr-blockchain.git
-cd edr-blockchain
-
-# Clone mobile app
-git clone https://github.com/amxr21/BC-Dentistry-Mobile-App.git
+git clone https://github.com/OpenUAE-LAB/BC-Dentistry-EDR.git
+cd BC-Dentistry-EDR
 ```
 
-### Download Fabric Binaries
+### Download Hyperledger Fabric Binaries
+
+The `fabric-samples/` directory is included in this repo, but you still need the Fabric binaries and Docker images:
 
 ```bash
 curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
 chmod +x install-fabric.sh
 ./install-fabric.sh --fabric-version 2.5.0 binary docker
+# Move the downloaded bin/ and config/ into fabric-samples/
+mv bin fabric-samples/
+mv config fabric-samples/
 ```
 
 ---
 
 ## 5. Full System Startup — Step by Step
 
-> Open a **separate terminal** for each step.
+> Open a **separate terminal** for each step. Steps must run in order.
 
 ---
 
@@ -218,17 +217,18 @@ docker start $(docker ps -aq -f status=exited)
 ```bash
 cd fabric-samples/test-network
 
-# Clean any existing state
+# Tear down any existing state
 ./network.sh down
 
-# Bring up network, create channel 'mychannel', with CAs
+# Bring up the network, create channel 'mychannel', enable CAs
 ./network.sh up createChannel -c mychannel -ca
 ```
 
-Verify containers:
+Verify all containers are running:
 
 ```bash
 docker ps --format "table {{.Names}}\t{{.Status}}"
+# Expected:
 # peer0.org1.example.com   Up
 # peer0.org2.example.com   Up
 # orderer.example.com      Up
@@ -250,7 +250,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
   -ccl javascript
 ```
 
-Expected: `Chaincode definition committed on channel 'mychannel'`
+Expected output: `Chaincode definition committed on channel 'mychannel'`
 
 ---
 
@@ -265,7 +265,7 @@ export PATH=${PWD}/../bin:$PATH
 # Point to core.yaml
 export FABRIC_CFG_PATH=$PWD/../config/
 
-# Org1 peer environment
+# Org1 peer environment variables
 export CORE_PEER_TLS_ENABLED=true
 export CORE_PEER_LOCALMSPID=Org1MSP
 export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
@@ -273,7 +273,7 @@ export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.examp
 export CORE_PEER_ADDRESS=localhost:7051
 ```
 
-Check:
+Verify:
 
 ```bash
 peer channel list
@@ -318,7 +318,7 @@ peer chaincode query -C mychannel -n basic -c '{"Args":["getAllPatients"]}'
 
 ---
 
-### Step 5 — Blockchain API (dental-backend)
+### Step 5 — Blockchain API (`dental-backend`)
 
 > **Terminal 2**
 
@@ -328,51 +328,69 @@ cd dental-backend
 # Remove stale wallet and connection profile (required on every fresh network start)
 rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
 
-# Copy the new connection profile generated by the running network
-mv /home/openuae/BC_Dentistry_temp/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json \
-   connection/
+# Copy the fresh connection profile generated by the running network
+cp ../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json \
+   connection/connection-org1.json
 ```
 
-> ⚠️ Adjust the source path if your `fabric-samples` lives elsewhere.  
-> `connection-org1.json` is regenerated every time `./network.sh up` is run — this step is mandatory on each startup.
+> `connection-org1.json` is regenerated every time `./network.sh up` runs — this copy step is **mandatory** on each startup.
 
 ```bash
+# Install dependencies (first run only)
+npm install
+
 # Enroll Fabric admin and application user into local wallet
 node enrollAdmin.js
 node registerUser.js
 
-# Install dependencies (first run only)
-npm install
-
-# Start the blockchain API
+# Start the Blockchain API
 node index.js
-# Running at http://localhost:3000
+# Listening at http://localhost:8081
 ```
 
 ---
 
-### Step 6 — Database & SQL API (server.js)
+### Step 6 — Database & SQL API (`backend`)
 
 > **Terminal 3**
 
+#### Option A — Docker Compose (recommended)
+
 ```bash
-# If MySQL container is stopped, start it first
-docker start 55c61e4f72f7
+# From repo root — start MySQL and the Database API together
+cp backend/.env.example backend/.env
+# Edit backend/.env and set DB_PASSWORD to a strong password
 
-# Verify it is running
-docker ps | grep 55c61e4f72f7
+docker compose up -d
+# MySQL available at localhost:3306
+# Database API available at http://localhost:8080
+```
 
-# Start the database API
-cd dental-database-backend
+Import the schema on first run (MySQL auto-imports files in `database/` on container creation):
+
+```bash
+# If you need to import manually:
+docker exec -i edr-mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" mydatabase < database/dump.sql
+```
+
+#### Option B — Manual (existing MySQL container)
+
+```bash
+# Start your existing MySQL container
+docker start <your-mysql-container-id>
+
+# Install dependencies (first run only)
+cd backend && npm install
+
+# Start the Database API
 node server.js
-# Running at http://localhost:3001
+# Listening at http://localhost:8080
 ```
 
 To inspect the database directly:
 
 ```bash
-docker exec -it 55c61e4f72f7 mysql -uroot -p
-# Password: <DB_PASSWORD>
+docker exec -it edr-mysql mysql -uroot -p
 
 mysql> SHOW DATABASES;
 mysql> USE mydatabase;
@@ -388,7 +406,11 @@ mysql> EXIT;
 > **Terminal 4**
 
 ```bash
-cd dental-frontend
+cd bc-dentistry-frontend
+
+# Copy environment config (first run only)
+cp .env.example .env
+# Edit .env if your APIs run on different hosts/ports
 
 # Install dependencies (first run only)
 npm install
@@ -407,6 +429,10 @@ npm run dev -- --port 5174
 ```bash
 cd BC-Dentistry-Mobile-App
 
+# Copy environment config (first run only)
+cp .env.example .env
+# For physical devices, set API_BASE_URL to your machine's LAN IP (not localhost)
+
 # Install dependencies (first run only)
 npm install
 
@@ -416,11 +442,11 @@ npx expo start
 
 | Method | How to connect |
 |--------|---------------|
-| Physical device | Install **Expo Go** app → scan QR code from terminal |
+| Physical device | Install **Expo Go** → scan QR code from terminal |
 | Android emulator | Press `a` in the Expo terminal |
 | iOS simulator (macOS) | Press `i` in the Expo terminal |
 
-> ⚠️ Physical devices must be on the same Wi-Fi as your machine. Set `API_BASE_URL` in `.env` to your machine's LAN IP, not `localhost`.
+> Physical devices must be on the same Wi-Fi as your dev machine. Set `API_BASE_URL` in `.env` to your LAN IP.
 
 ---
 
@@ -430,8 +456,6 @@ npx expo start
 ###############################################################################
 # TERMINAL 1 — Fabric Network + Chaincode
 ###############################################################################
-docker start $(docker ps -aq -f status=exited)
-
 cd fabric-samples/test-network
 ./network.sh down
 ./network.sh up createChannel -c mychannel -ca
@@ -453,26 +477,29 @@ peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.exa
   -c '{"function":"InitLedger","Args":[]}'
 
 ###############################################################################
-# TERMINAL 2 — Blockchain API
+# TERMINAL 2 — Blockchain API  (http://localhost:8081)
 ###############################################################################
 cd dental-backend
 rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
-mv /home/openuae/BC_Dentistry_temp/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json connection/
+cp ../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json connection/
 node enrollAdmin.js
 node registerUser.js
 node index.js
 
 ###############################################################################
-# TERMINAL 3 — Database API
+# TERMINAL 3 — MySQL + Database API  (http://localhost:8080)
 ###############################################################################
-docker start 55c61e4f72f7
-cd dental-database-backend
-node server.js
+# Option A: Docker Compose
+docker compose up -d
+
+# Option B: manual
+docker start <mysql-container-id>
+cd backend && node server.js
 
 ###############################################################################
-# TERMINAL 4 — Web App
+# TERMINAL 4 — Web App  (http://localhost:5174)
 ###############################################################################
-cd dental-frontend
+cd bc-dentistry-frontend
 npm run dev -- --port 5174
 
 ###############################################################################
@@ -485,8 +512,9 @@ npx expo start
 ### Shutdown
 
 ```bash
-# Terminals 2-5: Ctrl+C each
+# Terminals 2–5: Ctrl+C
 cd fabric-samples/test-network && ./network.sh down
+docker compose down   # stops MySQL + Database API
 ```
 
 ---
@@ -531,16 +559,9 @@ Channel: `mychannel` | Chaincode: `basic`
 ### Example peer CLI queries
 
 ```bash
-# Get all doctors
 peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllDoctors"]}'
-
-# Get dental files for Patient1
 peer chaincode query -C mychannel -n basic -c '{"function":"getDentalFiles","Args":["Patient1"]}'
-
-# Get all patients
 peer chaincode query -C mychannel -n basic -c '{"Args":["getAllPatients"]}'
-
-# Get pending requests for a patient
 peer chaincode query -C mychannel -n basic -c '{"function":"GetPendingRequestsForPatient","Args":["Patient1"]}'
 ```
 
@@ -548,105 +569,93 @@ peer chaincode query -C mychannel -n basic -c '{"function":"GetPendingRequestsFo
 
 ## 8. API Endpoints Reference
 
-### Blockchain API — `dental-backend/index.js`
+### Blockchain API — `dental-backend/index.js` (port 8081)
 
 | Method | Endpoint | Description | Role |
 |--------|----------|-------------|------|
-| POST | `/api/auth/login` | Authenticate, receive JWT | All |
-| POST | `/api/patients/add` | Register patient on blockchain | Admin |
-| GET | `/api/patients/all` | Get all patients | Admin |
-| GET | `/api/patients/:id` | Get patient by ID | Admin, Doctor |
-| POST | `/api/doctors/add` | Register doctor | Admin |
-| POST | `/api/doctors/assign` | Assign patient to doctor | Admin |
-| POST | `/api/records/medical/add` | Add medical record | Doctor |
-| GET | `/api/records/dental/:patientId` | Get dental chart | Doctor, Patient |
-| POST | `/api/consent/request` | Initiate data access request | Doctor |
-| POST | `/api/consent/approve` | Approve request | Admin |
-| POST | `/api/consent/grant` | Grant consent | Patient |
-| GET | `/api/consent/pending/:patientId` | Get pending requests | Patient |
+| POST | `/addDoctor` | Register doctor on blockchain | Admin |
+| POST | `/addPatient` | Register patient on blockchain | Admin |
+| GET | `/getAllPatients` | Get all patients | Admin |
+| GET | `/getPatient/:id` | Get patient by ID | Admin, Doctor |
+| POST | `/assignPatientToDoctor` | Link patient to doctor | Admin |
+| POST | `/addMedicalRecord` | Add medical record | Doctor |
+| GET | `/getDentalFiles/:patientId` | Get dental chart | Doctor, Patient |
+| POST | `/requestDataAccess` | Initiate data access request | Doctor |
+| POST | `/approveRequest` | Approve request | Admin |
+| POST | `/provideConsent` | Grant consent | Patient |
+| GET | `/getPendingRequestsForPatient/:id` | Get pending requests | Patient |
 
-### Database API — `dental-database-backend/server.js`
+### Database API — `backend/server.js` (port 8080)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/users` | Get all users |
-| POST | `/api/users/register` | Create user account |
-| GET | `/api/appointments/:patientId` | Get patient appointments |
-| POST | `/api/appointments` | Create appointment |
-| GET | `/api/records/labs/:patientId` | Get lab results |
+| POST | `/login` | Authenticate user, receive JWT |
+| POST | `/register` | Create admin account |
+| POST | `/registerDoctor` | Create doctor account |
+| GET | `/users` | Get all users |
+| GET | `/Patient` | Get all patients |
+| GET | `/Doctor` | Get all doctors |
+| GET | `/Appointment` | Get all appointments |
+| GET | `/Lab_Results` | Get lab results |
+| POST | `/syncOnChainPatients` | Sync on-chain patients to MySQL |
 
 ---
 
 ## 9. Database Reference
 
-### MySQL Container
+### MySQL via Docker Compose
 
 ```bash
-# Container ID
-55c61e4f72f7
+# Start (from repo root)
+docker compose up -d mysql
 
-# Start container
-docker start 55c61e4f72f7
+# Access MySQL shell
+docker exec -it edr-mysql mysql -uroot -p
 
-# Access MySQL
-docker exec -it 55c61e4f72f7 mysql -uroot -p
-# Password: <DB_PASSWORD>
+mysql> SHOW DATABASES;
+mysql> USE mydatabase;
+mysql> SHOW TABLES;
+mysql> SELECT * FROM User;
+mysql> EXIT;
 ```
 
-### Key queries
-
-```sql
-SHOW DATABASES;
-USE mydatabase;
-SHOW TABLES;
-SELECT * FROM User;
-SELECT * FROM Patient;
-SELECT * FROM Appointment;
-```
-
-### Import schema on fresh setup
+### Import schema manually
 
 ```bash
-docker exec -i 55c61e4f72f7 mysql -uroot -p<DB_PASSWORD> mydatabase < database/schema.sql
+docker exec -i edr-mysql mysql -uroot -p"YOUR_PASSWORD" mydatabase < database/dump.sql
 ```
+
+### Key tables
+
+| Table | Description |
+|-------|-------------|
+| `User` | All system users (Admin, Doctor, Patient) |
+| `UserRole` | Role definitions (1=SuperAdmin, 2=Admin, 3=Doctor, 4=Patient) |
+| `Admin` | Admin-specific data (Organization_ID) |
+| `Doctor` | Doctor-specific data (Works_At, Specialty, Blockchain_ID) |
+| `Patient` | Patient-specific data (Date_of_Birth, Emirates_ID) |
+| `Appointment` | Appointment records |
 
 ---
 
 ## 10. Performance Benchmarking — Hyperledger Caliper
 
-### Install
+### Install Caliper
 
 ```bash
 npm install --only=prod @hyperledger/caliper-cli@0.6.0
 npx caliper bind --caliper-bind-sut fabric:2.5
 ```
 
-### Run
+### Run benchmarks
 
 ```bash
-cd caliper
+cd caliper-benchmarks
 
-# Read benchmark
 npx caliper launch manager \
   --caliper-workspace . \
   --caliper-networkconfig networks/fabric-network.yaml \
   --caliper-benchconfig benchmarks/readPatient.yaml \
-  --caliper-flow-only-test \
-  --caliper-fabric-gateway-enabled
-
-# Write benchmark
-npx caliper launch manager \
-  --caliper-workspace . \
-  --caliper-networkconfig networks/fabric-network.yaml \
-  --caliper-benchconfig benchmarks/addPatient.yaml \
-  --caliper-flow-only-test \
-  --caliper-fabric-gateway-enabled
-
-# Delete benchmark
-npx caliper launch manager \
-  --caliper-workspace . \
-  --caliper-networkconfig networks/fabric-network.yaml \
-  --caliper-benchconfig benchmarks/deletePatient.yaml \
   --caliper-flow-only-test \
   --caliper-fabric-gateway-enabled
 ```
@@ -665,43 +674,46 @@ npx caliper launch manager \
 
 ## 11. Environment Variables
 
+Copy each `.env.example` to `.env` and fill in real values. Never commit `.env` files.
+
 ### `dental-backend/.env`
 
 ```env
-PORT=3000
+PORT=8081
 FABRIC_CHANNEL=mychannel
 FABRIC_CHAINCODE=basic
 FABRIC_CONNECTION_PROFILE=./connection/connection-org1.json
 FABRIC_WALLET_PATH=./wallet
-JWT_SECRET=CHANGE_ME
+JWT_SECRET=CHANGE_ME   # node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 JWT_EXPIRES_IN=8h
+CORS_ORIGIN=http://localhost:5174
 ```
 
-### `dental-database-backend/.env`
+### `backend/.env`
 
 ```env
-PORT=3001
-DB_HOST=localhost
+PORT=8080
+DB_HOST=localhost          # use 'mysql' when running via docker-compose
 DB_PORT=3306
 DB_NAME=mydatabase
 DB_USER=root
-DB_PASSWORD=<DB_PASSWORD>
+DB_PASSWORD=CHANGE_ME
 JWT_SECRET=CHANGE_ME
 ```
 
-### `dental-frontend/.env`
+### `bc-dentistry-frontend/.env`
 
 ```env
-VITE_BLOCKCHAIN_API_URL=http://localhost:3000/api
-VITE_DATABASE_API_URL=http://localhost:3001/api
+VITE_BLOCKCHAIN_API_URL=http://localhost:8081
+VITE_DATABASE_API_URL=http://localhost:8080
 ```
 
 ### `BC-Dentistry-Mobile-App/.env`
 
 ```env
-# Replace with your actual LAN IP for physical device testing
-API_BASE_URL=http://192.168.x.x:3001/api
-BLOCKCHAIN_API_URL=http://192.168.x.x:3000/api
+# Use your machine's LAN IP for physical device testing (not localhost)
+API_BASE_URL=http://192.168.x.x:8080
+BLOCKCHAIN_API_URL=http://192.168.x.x:8081
 ```
 
 ---
@@ -715,7 +727,7 @@ BLOCKCHAIN_API_URL=http://192.168.x.x:3000/api
 | Doctor | doctor1@example.com | test@123 |
 | Doctor | doctor2@example.com | test@123 |
 
-> ⚠️ These are development/test credentials only. Do not use in production.
+> These are development/test credentials only. Do not use in production.
 
 ---
 
@@ -725,7 +737,7 @@ BLOCKCHAIN_API_URL=http://192.168.x.x:3000/api
 
 ```bash
 docker start $(docker ps -aq -f status=exited)
-docker logs peer0.org1.example.com    # inspect errors
+docker logs peer0.org1.example.com
 ```
 
 ### "channel already exists" on network up
@@ -737,12 +749,12 @@ docker volume prune -f && docker network prune -f
 ./network.sh up createChannel -c mychannel -ca
 ```
 
-### Wallet or identity errors in dental-backend
+### Wallet or identity errors in `dental-backend`
 
 ```bash
 cd dental-backend
 rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
-mv /home/openuae/BC_Dentistry_temp/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json connection/
+cp ../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json connection/
 node enrollAdmin.js && node registerUser.js && node index.js
 ```
 
@@ -754,11 +766,11 @@ export PATH=${PWD}/../bin:$PATH
 export FABRIC_CFG_PATH=$PWD/../config/
 ```
 
-### MySQL container not running
+### MySQL container not responding
 
 ```bash
-docker start 55c61e4f72f7
-docker ps | grep 55c61e4f72f7
+docker compose up -d mysql
+docker logs edr-mysql
 ```
 
 ### Expo app cannot reach API on physical device
@@ -767,16 +779,16 @@ docker ps | grep 55c61e4f72f7
 # Get your machine's LAN IP
 ip addr show | grep "inet " | grep -v 127.0.0.1
 
-# Update BC-Dentistry-Mobile-App/.env:
-API_BASE_URL=http://<your-lan-ip>:3001/api
+# Update BC-Dentistry-Mobile-App/.env
+API_BASE_URL=http://<your-lan-ip>:8080
+BLOCKCHAIN_API_URL=http://<your-lan-ip>:8081
 
-# Restart Expo with cache clear
 npx expo start --clear
 ```
 
 ### ENDORSEMENT_POLICY_FAILURE on chaincode invoke
 
-Ensure both org peer addresses are included:
+Both org peer addresses must be included:
 
 ```bash
 --peerAddresses localhost:7051 \
@@ -802,7 +814,7 @@ CORS_ORIGIN=http://localhost:5174
 | Blockchain | Hyperledger Fabric | 2.5.0 |
 | Chaincode | JavaScript (`basic`) | ES2020 |
 | Consensus | Raft (CFT) | — |
-| Blockchain API | Node.js | 22.5.1 |
+| Blockchain API | Node.js + Fabric SDK | 22.5.1 |
 | Database API | Node.js + Express.js | 22.5.1 |
 | Database | MySQL (Docker) | 9.0.1 |
 | Web Frontend | React.js (Vite) | 18.3.1 |
