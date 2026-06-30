@@ -1,6 +1,6 @@
 # Blockchain-Based Electronic Dental Record (EDR) Sharing & Management System
 
-> **University of Sharjah — Department of Computer Science**  
+> **University of Sharjah - OpenUAE Research & Development Group**  
 > Built on **Hyperledger Fabric 2.5** · **Node.js** · **React.js** · **Expo (React Native)** · **MySQL**
 
 ---
