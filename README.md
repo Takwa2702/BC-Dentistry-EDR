@@ -329,8 +329,6 @@ peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllDoctors"]}'
 # Get dental files for Patient1
 peer chaincode query -C mychannel -n basic -c '{"function":"getDentalFiles","Args":["Patient1"]}'
 
-# List all patients
-peer chaincode query -C mychannel -n basic -c '{"Args":["getAllPatients"]}'
 ```
 
 ---
