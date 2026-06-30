@@ -181,15 +181,22 @@ cd BC-Dentistry-EDR
 
 ### Download Hyperledger Fabric Binaries
 
-The `fabric-samples/` directory is included in this repo, but you still need the Fabric binaries and Docker images:
+The `fabric-samples/` directory is included in this repo but the peer/orderer binaries are **not** (they are 270 MB of platform-specific executables). Run the installer from **inside** `fabric-samples/` so the files land in the right place:
 
 ```bash
+cd fabric-samples
 curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
 chmod +x install-fabric.sh
-./install-fabric.sh --fabric-version 2.5.0 binary docker
-# Move the downloaded bin/ and config/ into fabric-samples/
-mv bin fabric-samples/
-mv config fabric-samples/
+# Downloads bin/ and config/ into the current directory (fabric-samples/)
+./install-fabric.sh --fabric-version 2.5.4 binary
+cd ..
+```
+
+Verify:
+
+```bash
+./fabric-samples/bin/peer version
+# peer: Version: v2.5.4
 ```
 
 ---
