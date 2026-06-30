@@ -175,7 +175,7 @@ npm install -g expo-cli
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/OpenUAE-LAB/BC-Dentistry-EDR.git
+git clone https://github.com/Takwa2702/BC-Dentistry-EDR.git
 cd BC-Dentistry-EDR
 ```
 
