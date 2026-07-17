@@ -3,29 +3,35 @@ import React, { useEffect, useState } from 'react'
 
 import { DataRequest, NoRequests } from '../components'
 import axios from 'axios';
-
-const API_BASE_URL = 'http://openuae.fortiddns.com:28081'; 
+import { authHeaders, blockchainUrl, getPatientBlockchainID } from '../utils/api';
+import { useUser } from '../Context/UserContext';
 
 
 const rejectedRequests = () => {
 
   const [reqests, setRequests] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const { user, token } = useUser()
+  const patientID = getPatientBlockchainID(user)
 
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/getAllRequestsForPatient/Patient1`)
+    if (!token || !patientID) {
+      return
+    }
+
+    axios.get(blockchainUrl(`/getAllRequestsForPatient/${patientID}`), {
+      headers: authHeaders(token),
+    })
     .then((response)=> {
-      setRequests(response.data)
+      setRequests(response.data?.data || response.data || [])
       setIsLoading(true)
     })
     .finally(() => {
       setIsLoading(false)
     })
 
-
-
-  }, [])
+  }, [token, patientID])
 
 
 
@@ -55,9 +61,9 @@ const rejectedRequests = () => {
                         to={request.patientID}
                         status={request.status}
                         id={request.requestID}
-                        about={request.about || "N/A"}
-                        date={request.date || "N/A"}
-                        time={request.time || "N/A"}
+                        about={request.rejectionReason || request.purpose || request.reason || "N/A"}
+                        date={request.rejectedAt ? request.rejectedAt.slice(0, 10) : "N/A"}
+                        time={request.rejectedAt ? request.rejectedAt.slice(11, 16) : "N/A"}
                         optionsVisible={false}
                     />
                   )

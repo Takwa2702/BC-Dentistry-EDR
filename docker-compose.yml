@@ -53,8 +53,25 @@ services:
     environment:
       # Override host so the API reaches MySQL by service name inside the network
       DB_HOST: mysql
+      # The blockchain API is normally run on the Windows host for Fabric SDK access.
+      BLOCKCHAIN_API_URL: http://host.docker.internal:8081
     ports:
       - "8080:8080"
+
+  web-frontend:
+    build:
+      context: ./bc-dentistry-frontend
+      args:
+        VITE_DATABASE_API_URL: /api/database
+        VITE_BLOCKCHAIN_API_URL: /api/blockchain
+    container_name: edr-web-frontend
+    restart: unless-stopped
+    depends_on:
+      - database-api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5173:80"
 
   # ---------------------------------------------------------------------------
   # Blockchain API. Talks to the Fabric network via the Fabric SDK.

@@ -75,7 +75,8 @@ CREATE TABLE Patient (
     ID INT PRIMARY KEY,
     Date_of_Birth DATE NOT NULL,
     Gender VARCHAR(50) NOT NULL,
-    Emirates_ID VARCHAR(255) NOT NULL
+    Emirates_ID VARCHAR(255) NOT NULL,
+    Blockchain_ID VARCHAR(50) UNIQUE
 );
 
 CREATE TABLE Appointment (
@@ -211,12 +212,12 @@ INSERT INTO Doctor (ID, Works_At, Specialty) VALUES
 (4, 'Advanced Dental Care', 'Oral Surgery'),
 (5, 'Family Dentistry Center', 'Pediatric Dentistry');
 
-INSERT INTO Patient (ID, Date_of_Birth, Gender, Emirates_ID) VALUES
-(101, '1990-01-01', 'Male', 'EID123456789'),
-(102, '1985-02-15', 'Female', 'EID987654321'),
-(103, '1975-03-30', 'Male', 'EID112233445'),
-(104, '1995-07-07', 'Female', 'EID556677889'),
-(105, '2010-05-20', 'Male', 'EID998877665');
+INSERT INTO Patient (ID, Date_of_Birth, Gender, Emirates_ID, Blockchain_ID) VALUES
+(101, '1990-01-01', 'Male', 'EID123456789', 'Patient101'),
+(102, '1985-02-15', 'Female', 'EID987654321', 'Patient102'),
+(103, '1975-03-30', 'Male', 'EID112233445', 'Patient103'),
+(104, '1995-07-07', 'Female', 'EID556677889', 'Patient104'),
+(105, '2010-05-20', 'Male', 'EID998877665', 'Patient105');
 
 INSERT INTO Appointment (Meeting_For, Appointment_ID, Doctor_ID, Patient_ID, Date) VALUES
 ('Routine Checkup', 1, 1, 101, '2024-08-01'),
@@ -232,4 +233,3 @@ INSERT INTO Lab_Results (ID, T_Name, Order_ID, Case_ID, Site_ID, Discipline, Sta
 (4, 'Kidney Function Test', 1004, 504, 104, 'Nephrology', 'Pending', '2024-10-01'),
 (5, 'Liver Function Test', 1005, 505, 105, 'Gastroenterology', 'Completed', '2024-06-10'),
 (6, 'Thyroid Function Test', 1006, 506, 106, 'Endocrinology', 'Pending', '2024-07-22');
-

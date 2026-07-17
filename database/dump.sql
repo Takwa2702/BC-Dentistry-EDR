@@ -365,8 +365,15 @@ CREATE TABLE `Doctor` (
   `Works_At` varchar(255) DEFAULT NULL,
   `Specialty` varchar(255) DEFAULT NULL,
   `Blockchain_ID` varchar(50) DEFAULT NULL,
+  `License_Number` varchar(100) DEFAULT NULL,
+  `Emirates_ID` varchar(100) DEFAULT NULL,
+  `Clinic_ID` int DEFAULT NULL,
+  `Modified_Date` datetime DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `Blockchain_ID` (`Blockchain_ID`)
+  UNIQUE KEY `Blockchain_ID` (`Blockchain_ID`),
+  UNIQUE KEY `License_Number` (`License_Number`),
+  UNIQUE KEY `Emirates_ID` (`Emirates_ID`),
+  KEY `Clinic_ID` (`Clinic_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -376,7 +383,7 @@ CREATE TABLE `Doctor` (
 
 LOCK TABLES `Doctor` WRITE;
 /*!40000 ALTER TABLE `Doctor` DISABLE KEYS */;
-INSERT INTO `Doctor` VALUES (1,'Smile Dental Clinic','Orthodontics',NULL),(2,'Bright Smiles Clinic','Periodontics',NULL),(3,'Healthy Teeth Dental','Endodontics',NULL),(4,'Advanced Dental Care','Oral Surgery',NULL),(5,'Family Dentistry Center','Pediatric Dentistry',NULL),(15,'Dental Clinic A','Orthodontist','Doctor1'),(16,'Dental Clinic B','Orthodontist','Doctor2');
+INSERT INTO `Doctor` (`ID`,`Works_At`,`Specialty`,`Blockchain_ID`) VALUES (1,'Smile Dental Clinic','Orthodontics',NULL),(2,'Bright Smiles Clinic','Periodontics',NULL),(3,'Healthy Teeth Dental','Endodontics',NULL),(4,'Advanced Dental Care','Oral Surgery',NULL),(5,'Family Dentistry Center','Pediatric Dentistry',NULL),(15,'Dental Clinic A','Orthodontist','Doctor1'),(16,'Dental Clinic B','Orthodontist','Doctor2');
 /*!40000 ALTER TABLE `Doctor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -551,6 +558,21 @@ UNLOCK TABLES;
 --
 -- Table structure for table `Medical_History`
 --
+
+DROP TABLE IF EXISTS `Clinical_Record`;
+CREATE TABLE `Clinical_Record` (
+  `Record_ID` varchar(64) NOT NULL,
+  `Patient_Blockchain_ID` varchar(64) NOT NULL,
+  `Record_Type` enum('medical','dental') NOT NULL,
+  `Payload` json NOT NULL,
+  `Data_Hash` char(64) NOT NULL,
+  `Created_By_Doctor_ID` varchar(64) NOT NULL,
+  `Created_Date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Modified_Date` datetime DEFAULT NULL,
+  PRIMARY KEY (`Record_ID`),
+  KEY `idx_clinical_patient_type` (`Patient_Blockchain_ID`,`Record_Type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 
 DROP TABLE IF EXISTS `Medical_History`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -838,7 +860,22 @@ CREATE TABLE `Patient` (
   `Date_of_Birth` date DEFAULT NULL,
   `Gender` varchar(50) DEFAULT NULL,
   `Emirates_ID` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`ID`)
+  `Blockchain_ID` varchar(50) DEFAULT NULL,
+  `Nationality` varchar(100) DEFAULT NULL,
+  `Address` text,
+  `Blood_Type` varchar(3) DEFAULT NULL,
+  `Medical_History` json DEFAULT NULL,
+  `Allergies` json DEFAULT NULL,
+  `Medications` json DEFAULT NULL,
+  `Insurance_Details` json DEFAULT NULL,
+  `Clinic_ID` int DEFAULT NULL,
+  `Doctors` json DEFAULT NULL,
+  `Modified_Date` datetime DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `Blockchain_ID` (`Blockchain_ID`),
+  UNIQUE KEY `uq_patient_emirates_id` (`Emirates_ID`),
+  KEY `idx_patient_clinic` (`Clinic_ID`),
+  CONSTRAINT `fk_patient_clinic` FOREIGN KEY (`Clinic_ID`) REFERENCES `Organization` (`Organization_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -848,7 +885,7 @@ CREATE TABLE `Patient` (
 
 LOCK TABLES `Patient` WRITE;
 /*!40000 ALTER TABLE `Patient` DISABLE KEYS */;
-INSERT INTO `Patient` VALUES (17,'1980-01-01','Male','1234567890'),(18,'1990-02-02','Female','9876543210'),(19,'1985-03-03','Male','1357924680');
+INSERT INTO `Patient` (`ID`,`Date_of_Birth`,`Gender`,`Emirates_ID`,`Blockchain_ID`) VALUES (17,'1980-01-01','Male','1234567890','Patient1'),(18,'1990-02-02','Female','9876543210','Patient2'),(19,'1985-03-03','Male','1357924680','Patient3');
 /*!40000 ALTER TABLE `Patient` ENABLE KEYS */;
 UNLOCK TABLES;
 

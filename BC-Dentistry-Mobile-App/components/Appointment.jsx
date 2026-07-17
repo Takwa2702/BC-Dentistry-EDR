@@ -3,15 +3,16 @@ import React from 'react'
 
 import { icons } from '../constants'
 
-const Appointment = ({date, time, dr}) => {
+const Appointment = ({date, dr, reason, status}) => {
+  const appointmentDate = date ? new Date(date) : null;
   return (
     <View className="bg-white flex flex-col gap-y-4 p-4 rounded-2xl">
       <View id='AppointmentDetails' className="flex flex-row justify-between items-center">
         <View className="flex flex-row items-center gap-x-3">
             <Image source={icons.time} resizeMode='contain' className="w-6 h-6" />
             <View>
-                <Text>{date}</Text>
-                <Text>{time}</Text>
+                <Text>{appointmentDate ? appointmentDate.toLocaleDateString() : 'Date unavailable'}</Text>
+                <Text>{appointmentDate ? appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</Text>
             </View>
 
         </View>
@@ -30,6 +31,8 @@ const Appointment = ({date, time, dr}) => {
         <View className=" ">
             <Text className="text-xl font-bold leading-6">{`Dr. ${dr.name}`}</Text>
             <Text className="text-gray-400">{dr.specialization}</Text>
+            <Text>{reason}</Text>
+            <Text className="capitalize">{status}</Text>
         </View>
         
 

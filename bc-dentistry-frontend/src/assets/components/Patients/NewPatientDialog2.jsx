@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 
 
 
-const NewPatientDialog2 = ({ dialogStructure, dialogSectionId, hashhP, hashhN, buttonTextP, buttonTextN}) => {
+const NewPatientDialog2 = ({ dialogStructure, dialogSectionId, hashhP, hashhN, buttonTextP, buttonTextN, values = {}, onFieldChange, onSubmit}) => {
     const currentPath = useLocation()
     const [ha, setHa] = useState('#addNewPatient')
 
@@ -58,7 +58,17 @@ const NewPatientDialog2 = ({ dialogStructure, dialogSectionId, hashhP, hashhN, b
                 <div className="details flex flex-wrap col-span-8 gap-x-4 gap-y-4 ">
                     {
                         dialogStructure?.inputs.map((input) => {
-                            return <InputComponent key={input?.header} header={input?.header} type={input?.type} classes={input?.classes} placeholder={input?.placeholder} options={input?.options}/>
+                            return <InputComponent
+                                key={input?.header}
+                                header={input?.header}
+                                type={input?.type}
+                                classes={input?.classes}
+                                placeholder={input?.placeholder}
+                                options={input?.options}
+                                name={input?.name}
+                                value={input?.name ? values[input.name] : undefined}
+                                onChange={onFieldChange}
+                            />
                         })
                     }
 
@@ -73,7 +83,7 @@ const NewPatientDialog2 = ({ dialogStructure, dialogSectionId, hashhP, hashhN, b
                     buttonTextP != "" && <a className="" href={hashhP}><button onClick={submitNewAppointment} className=' border rounded-full h-12 w-12 text-[#000834] text-lg mt-6'>{'<<'}</button></a>
                 }
                 {
-                    buttonTextN == "Submit" &&  <a className="" href={hashhN}><button onClick={submitNewAppointment} className='bg-[#000834] text-white p-3 w-64 rounded-md mt-6'>{buttonTextN}</button></a>
+                    buttonTextN == "Submit" &&  <button onClick={onSubmit} className='bg-[#000834] text-white p-3 w-64 rounded-md mt-6'>{buttonTextN}</button>
                 }
                 {
                     buttonTextN != "Submit" &&  <a className="" href={hashhN}><button onClick={submitNewAppointment} className='border rounded-full h-12 w-12 text-[#000834] text-lg mt-6'>{">>"}</button></a>

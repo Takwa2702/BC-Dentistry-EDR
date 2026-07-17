@@ -219,7 +219,8 @@ CREATE TABLE Patient (
     ID INT PRIMARY KEY,
     Date_of_Birth DATE,
     Gender VARCHAR(50),
-    Emirates_ID VARCHAR(255)
+    Emirates_ID VARCHAR(255),
+    Blockchain_ID VARCHAR(50) UNIQUE
 );
 CREATE TABLE Appointment (
     Appointment_ID INT PRIMARY KEY,
@@ -322,5 +323,4 @@ CREATE TABLE Discipline (
     Name VARCHAR(255),
     Description VARCHAR(255)
 );
-
 

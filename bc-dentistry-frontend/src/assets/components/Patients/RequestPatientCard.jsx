@@ -1,94 +1,22 @@
-// import { useEffect, useRef } from "react"
-// import PatientRequestInput from "./PatientRequestInput";
-// import RequestPatientCardSubmit from "./RequestPatientCardSubmit";
-
-// const RequestPatientCard = () => {
-
-//     const requestDataForm = useRef();
-
-
-
-
-//     const expandRequestForm = () => {
-//         requestDataForm.current.classList.replace("h-0", "h-80");
-//     }
-
-//     useEffect(() => {
-//         const handleClicksOutside = (e) => {
-//             if(
-//                 requestDataForm &&
-//                 !requestDataForm.current.contains(e.target) &&
-//                 !e.target.classList.contains("patient-card-btn")
-//             ) {
-//                 requestDataForm.current.classList.replace("h-80", "h-0")
-//             }
-//         }
-    
-    
-//         document.addEventListener("click", handleClicksOutside)
-
-//         return () => {
-//             document.removeEventListener("click", handleClicksOutside)
-//         }
-
-
-
-//     }, [])
-
-
-
-
-
-//     // document.addEventListener("click", (e)=> {
-
-//     //     if(![...e.target.classList].includes("patient-card-btn") ){
-//     //         requestDataForm.current.classList?.replace("h-56", "h-0");
-//     //         // requestDataForm.current.classList.replace("opacity-100", "opacity-0");
-//     //     }
-//     // })
-
-
-
-//     return (
-//         <div className="patient-card relative flex flex-col text-center text-gray-400 border border-[.2em] border-dashed border-gray-300 rounded-md p-5 gap-y-3 h-56 justify-between">
-//             <a onClick={expandRequestForm} href="#" className="patient-card-btn text-8xl font-extralight">+</a>
-//             <div>
-//                 <p>Click here to request data for a specific patient</p>
-//             </div>
-
-
-
-
-//             <div ref={requestDataForm} className="request-form flex flex-col gap-y-4 absolute top-0 left-0 w-full h-0 overflow-hidden rounded-md bg-white drop-shadow-xl">
-//                 <div className="flex flex-col items-end   gap-y-4 p-5 text-left">
-//                     <PatientRequestInput header={'Patient name:'} placeHolder={"Patient full name here"} classes={''} />
-//                     <PatientRequestInput header={'Patient id:'} placeHolder={"id number"} classes={''} />
-//                     <PatientRequestInput header={'Notes:'} placeHolder={"Anything helpful?"} classes={''} />
-//                     <RequestPatientCardSubmit />
-//                 </div>
-//             </div>
-
-
-
-//         </div>
-//     )
-// }
-
-// export default RequestPatientCard;
 import { useEffect, useRef, useState } from "react";
 import PatientRequestInput from "./PatientRequestInput";
 import RequestPatientCardSubmit from "./RequestPatientCardSubmit";
+import { blockchainUrl, jsonHeaders } from "../../config/api.js";
+import { getStoredUser } from "../../utils/auth.js";
 
 const RequestPatientCard = () => {
     const requestDataForm = useRef();
     const [patientName, setPatientName] = useState('');
     const [patientID, setPatientID] = useState('');
     const [clinicID, setClinicID] = useState('');
-    const user = JSON.parse(localStorage.getItem("user")); 
-    const doctorID = user.blockchainID; 
+    const [dataType, setDataType] = useState('Medical and Dental Records');
+    const [purpose, setPurpose] = useState('');
+    const [notes, setNotes] = useState('');
+    const user = getStoredUser(); 
+    const doctorID = user?.blockchainID; 
 
     const expandRequestForm = () => {
-        requestDataForm.current.classList.replace("h-0", "h-80");
+        requestDataForm.current.classList.replace("h-0", "h-[34rem]");
     };
 
     useEffect(() => {
@@ -98,7 +26,7 @@ const RequestPatientCard = () => {
                 !requestDataForm.current.contains(e.target) &&
                 !e.target.classList.contains("patient-card-btn")
             ) {
-                requestDataForm.current.classList.replace("h-80", "h-0");
+                requestDataForm.current.classList.replace("h-[34rem]", "h-0");
             }
         };
 
@@ -110,33 +38,31 @@ const RequestPatientCard = () => {
 
     // Function to submit data to API
     const handleSubmit = async () => {
-        console.log("Submitting Request with:", { doctorID, patientID, clinicID });
-
-        if (!patientID || !clinicID) {
-            alert("Please enter both Patient ID and Clinic ID.");
+        if (!doctorID || !patientID || !clinicID || !dataType || !purpose) {
+            alert("Please enter patient, clinic, data type, and request purpose before submitting.");
             return;
         }
 
         try {
-            const response = await fetch('http://localhost:8081/requestDataAccess', {
+            const response = await fetch(blockchainUrl('/requestAccess'), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: jsonHeaders(),
                 body: JSON.stringify({
                     doctorID,
                     patientID,
                     dataOriginClinicID: clinicID,
+                    dataType,
+                    purpose,
+                    reason: purpose,
+                    notes,
                 }),
             });
 
-            const data = await response.json();
-            console.log("API Response:", data);
-
+            const payload = await response.json();
             if (response.ok) {
-                alert(`Request sent successfully! Request ID: ${data.requestID}`);
+                alert(`Request sent successfully! Request ID: ${payload.data.requestID}`);
             } else {
-                alert(`Error: ${data.message || "Failed to request access."}`);
+                alert(`Error: ${payload?.error?.message || "Failed to request access."}`);
             }
         } catch (error) {
             console.error("Failed to send request:", error);
@@ -146,7 +72,7 @@ const RequestPatientCard = () => {
 
     return (
         <div className="patient-card relative flex flex-col text-center text-gray-400 border border-[.2em] border-dashed border-gray-300 rounded-md p-5 gap-y-3 h-56 justify-between">
-            <a onClick={expandRequestForm} href="#" className="patient-card-btn text-8xl font-extralight">+</a>
+            <button type="button" onClick={expandRequestForm} aria-label="Request access to a patient at another clinic" className="patient-card-btn text-8xl font-extralight">+</button>
             <div>
                 <p>Click here to request data for a specific patient</p>
             </div>
@@ -159,7 +85,6 @@ const RequestPatientCard = () => {
                         value={patientName}
                         onChange={(e) => {
                             setPatientName(e.target.value);
-                            // console.log("Updated Patient Name:", e.target.value);
                         }}
                     />
                     <PatientRequestInput
@@ -168,7 +93,6 @@ const RequestPatientCard = () => {
                         value={patientID}
                         onChange={(e) => {
                             setPatientID(e.target.value);
-                            // console.log("Updated Patient ID:", e.target.value);
                         }}
                     />
                     <PatientRequestInput
@@ -177,8 +101,25 @@ const RequestPatientCard = () => {
                         value={clinicID}
                         onChange={(e) => {
                             setClinicID(e.target.value);
-                            // console.log("Updated Clinic ID:", e.target.value);
                         }}
+                    />
+                    <PatientRequestInput
+                        header={'Data type:'}
+                        placeHolder={"Medical, dental, DICOM, or complete record"}
+                        value={dataType}
+                        onChange={(e) => setDataType(e.target.value)}
+                    />
+                    <PatientRequestInput
+                        header={'Purpose:'}
+                        placeHolder={"Clinical reason for access"}
+                        value={purpose}
+                        onChange={(e) => setPurpose(e.target.value)}
+                    />
+                    <PatientRequestInput
+                        header={'Notes:'}
+                        placeHolder={"Optional supporting details"}
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
                     />
                     <RequestPatientCardSubmit onClick={handleSubmit} />
                 </div>

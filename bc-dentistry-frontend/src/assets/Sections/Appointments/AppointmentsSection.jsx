@@ -1,44 +1,64 @@
 import { useState, useEffect } from 'react';
 import { MainContainer } from "../../components";
 import AppointmentTicket from "../../components/Appointments/AppointmentTicket";
+import { authHeaders, databaseUrl, handleUnauthorizedResponse } from '../../config/api.js';
 
-const AppointmentsSection = () => {
-    // State to store fetched appointments data
+const AppointmentsSection = ({ refreshKey = 0 }) => {
     const [appointmentsTickets, setAppointmentsTickets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    // Fetch appointments from the backend API when the component mounts
-    useEffect(() => {
-        const fetchAppointments = async () => {
+    const fetchAppointments = async () => {
             try {
-                const response = await fetch("http://localhost:8080/Appointment"); // Adjust the endpoint if needed
+                const response = await fetch(databaseUrl('/appointments'), { headers: authHeaders() });
+                handleUnauthorizedResponse(response);
                 const data = await response.json();
-                setAppointmentsTickets(data); // Set the fetched data to the state
+                if (!response.ok || data?.success === false) {
+                    throw new Error(data?.error?.message || 'Unable to load appointments.');
+                }
+                setAppointmentsTickets(Array.isArray(data?.data) ? data.data : []);
             } catch (error) {
-                console.error("Error fetching appointments:", error);
+                setError(error.message || 'Unable to load appointments.');
+            } finally {
+                setLoading(false);
             }
         };
-
+    useEffect(() => {
         fetchAppointments();
-    }, []);
+    }, [refreshKey]);
 
-    // Map fetched appointments to AppointmentTicket components
+    const mutateAppointment = async (id, action, body = {}) => {
+        const path = action === 'cancel' ? `/appointments/${id}/cancel` : `/appointments/${id}`;
+        const response = await fetch(databaseUrl(path), { method: action === 'cancel' ? 'PATCH' : 'PUT', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) });
+        handleUnauthorizedResponse(response);
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error?.message || `Unable to ${action} appointment`);
+        await fetchAppointments();
+    };
+
     const allAppointments = appointmentsTickets.map((appointment, index) => {
         return (
             <AppointmentTicket
                 key={index}
-                date={appointment.Date}
+                date={appointment.Appointment_Date_Time || appointment.Date}
                 reason={appointment.Meeting_For}
                 dr={appointment.Doctor_ID}
                 id={appointment.Appointment_ID}
                 name={appointment.Patient_ID}
-                status={appointment.status}
+                specialty={appointment.Specialty}
+                status={appointment.Status}
+                onUpdate={(body) => mutateAppointment(appointment.Appointment_ID, 'update', body)}
+                onCancel={(reason) => mutateAppointment(appointment.Appointment_ID, 'cancel', { reason })}
             />
         );
     });
 
     return (
         <MainContainer Id="AppointmentsSection" classes={'mt-6 gap-y-6'}>
-            {allAppointments}
+            {loading && <p>Loading appointments...</p>}
+            {!loading && error && <p role="alert">{error}</p>}
+            {!loading && !error && allAppointments.length === 0 && <p>No appointments found.</p>}
+            {!loading && !error && allAppointments}
         </MainContainer>
     );
 };

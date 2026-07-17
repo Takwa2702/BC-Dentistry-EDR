@@ -11,7 +11,7 @@ networks:
 
 services:
   ca_org3:
-    image: hyperledger/fabric-ca:latest
+    image: hyperledger/fabric-ca:${CA_IMAGETAG:-1.5.21}
     labels:
       service: hyperledger-fabric
     environment:

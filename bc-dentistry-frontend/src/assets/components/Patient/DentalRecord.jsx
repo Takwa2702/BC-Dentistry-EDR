@@ -1,7 +1,6 @@
 import DentalChart from "./DentalChart";
 import DentalInfo from "./DentalInfo";
 
-import DicomViewer from "./DicomViewer"
 
 import { useContext } from "react";
 import { TeethContextContainer } from "../../Context/TeethContext";
@@ -24,7 +23,6 @@ const DentalRecord = ({dentalDetails}) => {
             </div>
 
 
-            <DicomViewer />
 
 
 

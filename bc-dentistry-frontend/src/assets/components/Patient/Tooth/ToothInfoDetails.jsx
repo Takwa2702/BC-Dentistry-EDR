@@ -1,4 +1,4 @@
-const ToothInfoDetails = () => {
+const ToothInfoDetails = ({ toothSite = 'Not selected' }) => {
     return (
         <div>
             <div className="flex"> 

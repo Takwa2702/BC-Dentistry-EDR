@@ -5,7 +5,7 @@ import NewAppointmentDialog from "../Appointments/NewAppointmentDialog";
 import SetNewAppointment from './SetNewAppointment';
 import { useRole } from "../../Context/RoleContext.jsx";
 
-const AppointmentsControlBar = () => {
+const AppointmentsControlBar = ({ onCreated }) => {
     const { userRole } = useRole();
     const dialogg = useRef();
     const addNewAppointment = () => {
@@ -48,7 +48,7 @@ const AppointmentsControlBar = () => {
             {userRole === 'admin' && (
                 <>
                     <SetNewAppointment clickFunc={addNewAppointment} />
-                    <NewAppointmentDialog reff={dialogg} />
+                    <NewAppointmentDialog reff={dialogg} onCreated={onCreated} />
                 </>
             )}
         </div>

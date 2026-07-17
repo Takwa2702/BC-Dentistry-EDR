@@ -1,4 +1,4 @@
-# Database — Schema, Seed Data, and Dump
+# Database - Schema, Seed Data, and Dump
 
 **MySQL version:** 9.0.1 (Docker image `mysql:9.0.1`)
 **Database name:** `mydatabase`
@@ -12,9 +12,12 @@ container is created (i.e. when the data volume is empty).
 
 ## Files
 
-- `schema.sql` — table definitions (structure only).
-- `seed.sql` — seed/test data (sample users, patients, appointments).
-- A full `dump.sql` can be produced from a running container (see below).
+- `dump.sql` - full schema and seed/test data for the current `mydatabase`
+  setup. This is the file Docker Compose imports on first run.
+
+The older separate `schema.sql` / `seed.sql` files are not present in this
+handover. If those are needed, generate them from a running database using the
+commands below.
 
 ## Producing a full dump from the running container
 
@@ -42,8 +45,8 @@ docker exec edr-mysql \
 
 ## Importing into a fresh database
 
-If you use `docker-compose up`, the files in this folder are imported
-automatically on first run — no manual step needed.
+If you use `docker compose up`, `dump.sql` is imported automatically on first
+run, so no manual step is needed.
 
 To import manually into an already-running container:
 
