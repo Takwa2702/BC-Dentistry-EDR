@@ -976,7 +976,7 @@ class DentalRecordSharing extends Contract {
 
 // Doctor: AddDentalChart adds a dental chart to an existing patient
     // Add or update a dental chart entry for a specific patient
-    async addDentalChartEntry(ctx, patientID, site, surface, category, subCategory, code, status, preAuth, phase, discipline, diagnoses, notes, estimate, doctorID, auditDate, createdDate) {
+    async legacyAddDentalChartEntry(ctx, patientID, site, surface, category, subCategory, code, status, preAuth, phase, discipline, diagnoses, notes, estimate, doctorID, auditDate, createdDate) {
         this._requireActor(ctx, doctorID, 'doctor');
         const exists = await this._actorExists(ctx, patientID);
         if (!exists) {
@@ -1050,7 +1050,7 @@ class DentalRecordSharing extends Contract {
     }
 
     // Get all dental chart data for a specific patient
-    async getAllDentalChartData(ctx, patientID) {
+    async legacyGetAllDentalChartData(ctx, patientID) {
         const patientJSON = await ctx.stub.getState(patientID);
         if (!patientJSON || patientJSON.length === 0) {
             throw new Error(`The patient ${patientID} does not exist`);
@@ -1064,7 +1064,7 @@ class DentalRecordSharing extends Contract {
 
 
     // Add a medical record for a patient
-    async AddMedicalRecord(ctx, patientID, medicalRecord) {
+    async LegacyAddMedicalRecord(ctx, patientID, medicalRecord) {
         this._requireRole(ctx, 'doctor');
         // Check if the patient existsaddDentalChartEntry
         const exists = await this._actorExists(ctx, patientID);
@@ -1093,7 +1093,7 @@ class DentalRecordSharing extends Contract {
 
 
     // Get all medical records for a patient
-    async GetMedicalRecords(ctx, patientID) {
+    async LegacyGetMedicalRecords(ctx, patientID) {
         // Check if the patient exists
         const exists = await this._actorExists(ctx, patientID);
         if (!exists) {

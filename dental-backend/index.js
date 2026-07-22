@@ -209,6 +209,17 @@ if (!SECRET_KEY) {
 
 let connectionProfile;
 
+app.get('/health', async (req, res) => {
+    const profileReady = fs.existsSync(ccpPath);
+    const walletReady = fs.existsSync(walletPath)
+        && fs.readdirSync(walletPath).some((entry) => entry.endsWith('.id'));
+    return res.status(profileReady && walletReady ? 200 : 503).json({
+        status: profileReady && walletReady ? 'ok' : 'not-ready',
+        service: 'blockchain-api',
+        fabric: { profileReady, walletReady, channel: fabricChannel, chaincode: fabricChaincode }
+    });
+});
+
 const getConnectionProfile = () => {
     if (connectionProfile) {
         return connectionProfile;

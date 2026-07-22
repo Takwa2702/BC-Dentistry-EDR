@@ -9,6 +9,7 @@ test('web shell provides responsive layout, semantic navigation, and visible foc
   const nav = read('src/assets/Sections/Navbar.jsx');
   const css = read('src/index.css');
   assert.match(app, /<main id="main-content" tabIndex="-1"/);
+  assert.match(app, /data-release="2026-07-18-responsive-forms"/);
   assert.match(app, /lg:ml-\[15\.5%\]/);
   assert.match(nav, /<nav[^>]+aria-label="Primary navigation"/);
   assert.match(nav, /overflow-x-auto/);
@@ -67,4 +68,32 @@ test('patient login uses an owner-scoped route and admin patient creation is mou
   assert.match(dialog, /role="dialog"/);
   assert.match(dialog, /aria-modal="true"/);
   assert.doesNotMatch(dialog, /document\.getElementById|window\.location\.hash|translate-y/);
+});
+
+test('patient management uses complete themed workflows without browser dialogs', () => {
+  const patientCard = read('src/assets/components/Patients/PatientCard.jsx');
+  const patientDialog = read('src/assets/components/Patients/NewPatientDialog.jsx');
+  const patientCards = read('src/assets/Sections/Patients/PatientsCards.jsx');
+  assert.match(patientCard, /appointment-options\/doctors/);
+  assert.match(patientCard, /title=\{`Delete \$\{fullName\}\?`\}/);
+  assert.match(patientDialog, /method: isEditing \? 'PUT' : 'POST'/);
+  assert.match(patientDialog, /appointment-options\/doctors/);
+  assert.match(patientDialog, /type="search" role="combobox"/);
+  assert.match(patientDialog, /aria-multiselectable="true"/);
+  assert.doesNotMatch(patientDialog, /Doctor IDs \(comma-separated\)/);
+  assert.match(patientCards, /role === 'doctor' && <RequestPatientCard/);
+  for (const field of ['nationality', 'address', 'bloodType', 'medicalHistory', 'allergies', 'medications', 'insuranceProvider']) assert.match(patientDialog, new RegExp(field));
+
+  const sourceRoot = new URL('../src/', import.meta.url);
+  const sourceFiles = [];
+  const visit = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const location = new URL(entry.name, directory.href.endsWith('/') ? directory : new URL(`${directory.href}/`));
+      if (entry.isDirectory()) visit(location);
+      else if (/\.(js|jsx)$/.test(entry.name)) sourceFiles.push(location);
+    }
+  };
+  visit(sourceRoot);
+  const source = sourceFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+  assert.doesNotMatch(source, /\b(?:window\.)?(?:alert|prompt|confirm)\s*\(/);
 });

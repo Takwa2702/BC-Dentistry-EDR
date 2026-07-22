@@ -31,7 +31,7 @@ const LoginSection = () => {
             setUserRole(user.role?.toLowerCase() || null);
     
             const role = user.role?.toLowerCase();
-            const destination = role === 'patient' ? '/my-record' : ['admin', 'doctor'].includes(role) ? '/dashboard' : '/unauthorized';
+            const destination = user.mustChangePassword ? '/change-password' : role === 'system' ? '/clinics' : role === 'patient' ? '/my-record' : ['admin', 'doctor'].includes(role) ? '/dashboard' : '/unauthorized';
             navigate(destination, { replace: true });
         } catch {
             setError('Invalid email or password');

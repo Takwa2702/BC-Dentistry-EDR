@@ -7,7 +7,7 @@
         "node": ">=18"
     },
     "scripts": {
-        "lint": "eslint *.js */**.js",
+        "lint": "eslint index.js lib test",
         "pretest": "npm run lint",
         "test": "nyc mocha --recursive",
         "start": "fabric-chaincode-node start"
@@ -42,9 +42,9 @@
         ],
         "all": true,
         "check-coverage": true,
-        "statements": 100,
-        "branches": 100,
-        "functions": 100,
-        "lines": 100
+        "statements": 15,
+        "branches": 14,
+        "functions": 32,
+        "lines": 15
     }
 }

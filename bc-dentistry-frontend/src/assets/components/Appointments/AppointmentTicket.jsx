@@ -1,28 +1,23 @@
 import { useState } from 'react';
+import ActionDialog from '../ActionDialog.jsx';
 
-const AppointmentTicket = ({ date, reason, dr, id, name, specialty, status, onUpdate, onCancel }) => {
-    const [error, setError] = useState('');
-    const update = async () => {
-        const appointmentDateTime = window.prompt('New appointment date/time (YYYY-MM-DDTHH:mm)', String(date || '').slice(0, 16));
-        if (!appointmentDateTime) return;
-        try { setError(''); await onUpdate?.({ appointmentDateTime }); } catch (reasonValue) { setError(reasonValue.message); }
-    };
-    const cancel = async () => {
-        const cancelReason = window.prompt('Cancellation reason');
-        if (cancelReason === null) return;
-        try { setError(''); await onCancel?.(cancelReason); } catch (reasonValue) { setError(reasonValue.message); }
-    };
-    const formattedDate = date ? new Date(date).toLocaleString() : 'Date not set';
-    return (
-        <article className="appointment-ticket col-span-5 xl:col-span-4 2xl:col-span-3 bg-white p-5 flex flex-col gap-y-3 rounded-xl border">
-            <div className="date-time bg-blue-900 px-3 py-2 text-white rounded-md">{formattedDate}</div>
-            <h3 className="text-2xl font-bold">{reason}</h3>
-            <p className="font-semibold">{specialty} · Dr. {dr}</p>
-            <p>Patient: {name}</p><p>ID: {id}</p><p className="capitalize">Status: {status}</p>
-            {error && <p role="alert" className="text-red-700">{error}</p>}
-            {status !== 'cancelled' && <div className="flex gap-2"><button onClick={update} className="border border-blue-800 px-3 py-2 rounded">Update</button><button onClick={cancel} className="border border-red-700 text-red-700 px-3 py-2 rounded">Cancel</button></div>}
-        </article>
-    );
+const AppointmentTicket = ({ date, reason, dr, id, name, specialty, status, canManage = false, onUpdate, onCancel }) => {
+  const [dialog, setDialog] = useState('');
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const execute = async () => {
+    if (!value) return setError(dialog === 'update' ? 'Choose a new appointment date and time.' : 'Enter a cancellation reason.');
+    setBusy(true); setError('');
+    try { if (dialog === 'update') await onUpdate?.({ appointmentDateTime: value }); else await onCancel?.(value); setDialog(''); }
+    catch (requestError) { setError(requestError.message); }
+    finally { setBusy(false); }
+  };
+  const formattedDate = date ? new Date(date).toLocaleString() : 'Date not set';
+  return <article className="appointment-ticket col-span-5 xl:col-span-4 2xl:col-span-3 bg-white p-5 flex flex-col gap-y-3 rounded-xl border">
+    <div className="date-time bg-blue-900 px-3 py-2 text-white rounded-md">{formattedDate}</div><h3 className="text-2xl font-bold">{reason}</h3><p className="font-semibold">{specialty} · Dr. {dr}</p><p>Patient: {name}</p><p>ID: {id}</p><p className="capitalize">Status: {status}</p>
+    {canManage && status !== 'cancelled' && <div className="flex gap-2"><button type="button" onClick={() => { setValue(String(date || '').slice(0,16)); setError(''); setDialog('update'); }} className="border border-blue-800 px-3 py-2 rounded">Update</button><button type="button" onClick={() => { setValue(''); setError(''); setDialog('cancel'); }} className="border border-red-700 text-red-700 px-3 py-2 rounded">Cancel</button></div>}
+    {dialog && <ActionDialog title={dialog === 'update' ? 'Update appointment' : 'Cancel appointment'} description={dialog === 'update' ? 'Choose the new scheduled date and time.' : 'Provide a reason for the patient record.'} confirmLabel={dialog === 'update' ? 'Save appointment' : 'Cancel appointment'} danger={dialog === 'cancel'} busy={busy} error={error} onClose={() => setDialog('')} onConfirm={execute}><label className="text-sm font-semibold">{dialog === 'update' ? 'Date and time' : 'Cancellation reason'}{dialog === 'update' ? <input type="datetime-local" value={value} onChange={(event) => setValue(event.target.value)} className="mt-2 block w-full rounded-md border p-3" /> : <textarea value={value} onChange={(event) => setValue(event.target.value)} className="mt-2 block min-h-28 w-full rounded-md border p-3" />}</label></ActionDialog>}
+  </article>;
 };
-
 export default AppointmentTicket;

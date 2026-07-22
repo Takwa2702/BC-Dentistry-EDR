@@ -20,7 +20,12 @@ const Navbar = () => {
     }, [location]);
 
     const normalizedRole = userRole?.toLowerCase();
-    const navList = normalizedRole === 'patient' ? [{ title: "My Record", link:'My-Record', icon: Icon3 }] : [
+    const navList = normalizedRole === 'system' ? [
+        { title: "Clinics", link:'Clinics', icon: Icon1 },
+    ] : normalizedRole === 'patient' ? [
+        { title: "My Record", link:'My-Record', icon: Icon3 },
+        { title: "Appointments", link:'Appointments', icon: Icon2 },
+    ] : [
         { title: "Dashboard", link:'Dashboard', icon: Icon1 },
         { title: "Appointments", link:'Appointments', icon: Icon2 },
         { title: "Patients", link:'Patients', icon: Icon3 },
@@ -40,15 +45,15 @@ const Navbar = () => {
         });
 
     return (
-        <nav id="Navbar" aria-label="Primary navigation" className="fixed inset-x-3 top-3 z-40 rounded-xl bg-[#000814] px-3 py-2 lg:inset-x-auto lg:h-[95vh] lg:w-[14%] lg:px-6 lg:py-10">
+        <nav id="Navbar" aria-label="Primary navigation" className="fixed inset-x-3 top-3 z-40 overflow-hidden rounded-xl bg-[#000814] px-3 py-2 lg:inset-x-auto lg:h-[95vh] lg:w-[14%] lg:px-6 lg:py-10">
             <div className="hidden lg:block"><NavLogo /></div>
             <div id="Navlinks" className="flex overflow-x-auto text-white lg:mt-16 lg:flex-col lg:gap-y-12 lg:overflow-visible">
                 <div className="main flex min-w-max items-center gap-2 lg:min-w-0 lg:flex-col lg:gap-y-6">
                     {renderNavLinks()}
                 </div>
                 <div className="personal ml-auto flex min-w-max items-center gap-2 lg:ml-0 lg:flex-col lg:gap-y-6">
-                    {normalizedRole !== 'patient' && <Link className="w-full" to="/settings"><NavLink icon={Icon6} title={"Settings"} link={"settings"} /></Link>}
-                    {normalizedRole !== 'patient' && <Link className="w-full" to="/info"><NavLink icon={Icon7} title={"Info"} link={"info"} /></Link>}
+                    {['admin','doctor'].includes(normalizedRole) && <Link className="w-full" to="/settings"><NavLink icon={Icon6} title={"Settings"} link={"settings"} /></Link>}
+                    {['admin','doctor'].includes(normalizedRole) && <Link className="w-full" to="/info"><NavLink icon={Icon7} title={"Info"} link={"info"} /></Link>}
                 </div>
             </div>
         </nav>

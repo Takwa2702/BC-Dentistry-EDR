@@ -12,6 +12,7 @@ const RequestPatientCard = () => {
     const [dataType, setDataType] = useState('Medical and Dental Records');
     const [purpose, setPurpose] = useState('');
     const [notes, setNotes] = useState('');
+    const [status, setStatus] = useState({ loading: false, error: '', notice: '' });
     const user = getStoredUser(); 
     const doctorID = user?.blockchainID; 
 
@@ -39,10 +40,11 @@ const RequestPatientCard = () => {
     // Function to submit data to API
     const handleSubmit = async () => {
         if (!doctorID || !patientID || !clinicID || !dataType || !purpose) {
-            alert("Please enter patient, clinic, data type, and request purpose before submitting.");
+            setStatus({ loading: false, error: 'Enter the patient, clinic, data type, and request purpose before submitting.', notice: '' });
             return;
         }
 
+        setStatus({ loading: true, error: '', notice: '' });
         try {
             const response = await fetch(blockchainUrl('/requestAccess'), {
                 method: 'POST',
@@ -60,13 +62,14 @@ const RequestPatientCard = () => {
 
             const payload = await response.json();
             if (response.ok) {
-                alert(`Request sent successfully! Request ID: ${payload.data.requestID}`);
+                setStatus({ loading: false, error: '', notice: `Request sent successfully. Request ID: ${payload.data.requestID}` });
+                setPatientName(''); setPatientID(''); setClinicID(''); setPurpose(''); setNotes('');
             } else {
-                alert(`Error: ${payload?.error?.message || "Failed to request access."}`);
+                setStatus({ loading: false, error: payload?.error?.message || 'Failed to request access.', notice: '' });
             }
         } catch (error) {
             console.error("Failed to send request:", error);
-            alert("Error submitting request. Please try again later.");
+            setStatus({ loading: false, error: 'Error submitting request. Please try again later.', notice: '' });
         }
     };
 
@@ -121,7 +124,9 @@ const RequestPatientCard = () => {
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                     />
-                    <RequestPatientCardSubmit onClick={handleSubmit} />
+                    {status.error && <p role="alert" className="w-full rounded bg-red-50 p-2 text-sm text-red-800">{status.error}</p>}
+                    {status.notice && <p role="status" className="w-full rounded bg-green-50 p-2 text-sm text-green-800">{status.notice}</p>}
+                    <RequestPatientCardSubmit onClick={handleSubmit} disabled={status.loading} />
                 </div>
             </div>
         </div>

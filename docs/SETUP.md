@@ -197,6 +197,8 @@ reset the database, remove the volume: `docker compose down -v`.
 
 ## 6. Full System Startup — Step by Step (manual)
 
+> For the Phase 11 Compose topology, Fabric exception, persistence, health checks, and AWS handoff procedure, see [PHASE11_DEPLOYMENT.md](PHASE11_DEPLOYMENT.md). All non-Fabric server services run through the root Compose file; the Fabric test network and mobile client remain explicitly outside that application stack.
+
 > Open a separate terminal for each step.
 
 ### Step 0 — Restart exited containers (when resuming)

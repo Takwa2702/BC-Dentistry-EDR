@@ -219,6 +219,8 @@ ls fabric-samples/bin/
 
 ## 5. Full System Startup — Step by Step
 
+> **Phase 11 application topology:** use [`docs/PHASE11_DEPLOYMENT.md`](docs/PHASE11_DEPLOYMENT.md) for the repeatable all-container application stack and explicit Fabric/mobile exception boundary. The manual component steps below remain useful for debugging but are not the preferred complete application startup path.
+
 > Open a **separate terminal** for each step. Steps must run in order.
 
 ---
@@ -615,7 +617,7 @@ peer chaincode query -C mychannel -n basic -c '{"function":"GetPendingRequestsFo
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/login` | Authenticate user, receive JWT |
-| POST | `/register` | Create admin account |
+| POST | `/register` | Create the single admin for an existing clinic (Sys Admin only) |
 | POST | `/registerDoctor` | Create doctor account |
 | GET | `/users` | Get all users |
 | GET | `/Patient` | Get all patients |
@@ -733,8 +735,18 @@ DB_USER=root
 DB_PASSWORD=CHANGE_ME
 JWT_SECRET=CHANGE_ME
 JWT_EXPIRES_IN=8h
-ADMIN_BOOTSTRAP_TOKEN=CHANGE_ME
+SYS_ADMIN_EMAIL=sysadmin@example.com
+SYS_ADMIN_TEMP_PASSWORD=replace-with-a-strong-temporary-password
 ```
+
+After applying `database/migrations/2026-07-21-super-admin-clinic-management.sql`, create the one initial Sys Admin from the deployment environment:
+
+```bash
+cd backend
+npm run bootstrap:sysadmin
+```
+
+The bootstrap command is single-use. The temporary password must be changed on the first login before any protected operation is allowed.
 
 ### `bc-dentistry-frontend/.env`
 

@@ -74,7 +74,7 @@ const PatientsCards = ({ patients, role, isAddPatientOpen, onCloseAddPatient, on
     return (
         <div id="PatientsCards" className="rounded-md">
             <div className='grid grid-cols-3 2xl:grid-cols-4 gap-3 p-0'>
-                <RequestPatientCard />
+                {role === 'doctor' && <RequestPatientCard />}
                 {patientsCards.length > 0 ? patientsCards : <p>No patients found.</p>}
             </div>
 

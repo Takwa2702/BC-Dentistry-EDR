@@ -10,10 +10,10 @@ require('dotenv').config();
 const app = express();
 const SECRET_KEY = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '2h';
-const ADMIN_BOOTSTRAP_TOKEN = process.env.ADMIN_BOOTSTRAP_TOKEN;
 const BLOCKCHAIN_API_URL = process.env.BLOCKCHAIN_API_URL?.replace(/\/+$/, '');
 const PATIENT_ROLE_ID = 4;
 const DOCTOR_ROLE_ID = 3;
+const ADMIN_ROLE_ID = 2;
 
 const ROLE_ALIASES = {
     admin: 'admin',
@@ -136,10 +136,6 @@ if (!BLOCKCHAIN_API_URL) {
     console.warn('BLOCKCHAIN_API_URL is not configured. /syncOnChainPatients will return a configuration error.');
 }
 
-if (!ADMIN_BOOTSTRAP_TOKEN) {
-    console.warn('ADMIN_BOOTSTRAP_TOKEN is not configured. /register requires an Admin/System JWT.');
-}
-
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -175,6 +171,15 @@ app.get('/', (req, res) => {
     return res.json("from backend side");
 });
 
+app.get('/health', (req, res) => {
+    db.query('SELECT 1 AS ready', (error) => {
+        if (error) {
+            return res.status(503).json({ status: 'not-ready', service: 'database-api', database: false });
+        }
+        return res.json({ status: 'ok', service: 'database-api', database: true });
+    });
+});
+
 
 
 app.post('/login', async (req, res) => {
@@ -190,7 +195,8 @@ app.post('/login', async (req, res) => {
     const sql = `
         SELECT 
             User.ID, User.First_Name, User.Last_Name, User.Email, User.Password, 
-            UserRole.Name AS Role_Name,
+            UserRole.Name AS Role_Name, User.Must_Change_Password, User.IsActive,
+            Organization.IsActive AS Clinic_IsActive,
             COALESCE(Admin.Organization_ID, NULL) AS Organization_ID,
             COALESCE(Doctor.Works_At, NULL) AS WorksAt,
             COALESCE(Doctor.Specialty, NULL) AS Specialty,
@@ -198,6 +204,7 @@ app.post('/login', async (req, res) => {
         FROM User 
         INNER JOIN UserRole ON User.Role_ID = UserRole.Role_ID
         LEFT JOIN Admin ON User.ID = Admin.User_ID
+        LEFT JOIN Organization ON Admin.Organization_ID = Organization.Organization_ID
         LEFT JOIN Doctor ON User.ID = Doctor.ID
         LEFT JOIN Patient ON User.ID = Patient.ID
         WHERE User.Email = ?
@@ -215,6 +222,8 @@ app.post('/login', async (req, res) => {
         }
 
         const user = results[0];
+        if (!user.IsActive) return res.status(403).json({ error: 'Account is inactive' });
+        if (normalizeRole(user.Role_Name) === 'admin' && !user.Clinic_IsActive) return res.status(403).json({ error: 'Clinic is inactive' });
         const match = await bcrypt.compare(password, user.Password);
 
         if (!match) {
@@ -230,11 +239,12 @@ app.post('/login', async (req, res) => {
         // JWT payload
         const tokenPayload = {
             id: user.ID,
-            role: user.Role_Name,
+            role: normalizeRole(user.Role_Name),
             organizationId: user.Organization_ID || null,
             worksAt: user.WorksAt || null,
             specialty: user.Specialty || null,
-            blockchainID: user.BlockchainID || null
+            blockchainID: user.BlockchainID || null,
+            mustChangePassword: Boolean(user.Must_Change_Password)
         };
 
         if (!SECRET_KEY) {
@@ -248,11 +258,12 @@ app.post('/login', async (req, res) => {
             id: user.ID,
             name: `${user.First_Name} ${user.Last_Name}`,
             email: user.Email,
-            role: user.Role_Name,
+            role: normalizeRole(user.Role_Name),
             organizationId: user.Organization_ID || null,
             worksAt: user.WorksAt || null,
             specialty: user.Specialty || null,
-            blockchainID: user.BlockchainID || null
+            blockchainID: user.BlockchainID || null,
+            mustChangePassword: Boolean(user.Must_Change_Password)
         };
 
         res.status(200).json({ token, user: userData });
@@ -267,14 +278,6 @@ const getBearerToken = (req) => {
     return /^Bearer$/i.test(scheme) ? token : null;
 };
 
-const safeTokenEquals = (receivedToken, expectedToken) => {
-    const received = Buffer.from(String(receivedToken || ''), 'utf8');
-    const expected = Buffer.from(String(expectedToken || ''), 'utf8');
-
-    if (received.length !== expected.length) return false;
-    return crypto.timingSafeEqual(received, expected);
-};
-
 const authenticateToken = (req, res, next) => {
     const token = getBearerToken(req);
 
@@ -285,6 +288,9 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, SECRET_KEY, (err, user) => {
         if (err) return sendApiError(res, 403, 'INVALID_TOKEN', 'Invalid token');
+        if (user.mustChangePassword && req.path !== '/change-password') {
+            return sendApiError(res, 403, 'PASSWORD_CHANGE_REQUIRED', 'Password change is required before continuing');
+        }
         req.user = user;
         next();
     });
@@ -302,41 +308,9 @@ const requireRoles = (...allowedRoles) => {
     };
 };
 
-const authorizeAdminRegistration = (req, res, next) => {
-    const bootstrapToken = req.headers['x-bootstrap-token'];
-
-    if (bootstrapToken) {
-        if (!ADMIN_BOOTSTRAP_TOKEN || !safeTokenEquals(bootstrapToken, ADMIN_BOOTSTRAP_TOKEN)) {
-            return res.status(403).json({ error: 'Invalid admin bootstrap token' });
-        }
-        req.user = { role: 'system', bootstrap: true };
-        return next();
-    }
-
-    const token = getBearerToken(req);
-    if (!token) {
-        return res.status(401).json({ error: 'Admin registration requires an Admin/System token or configured bootstrap token' });
-    }
-    if (!SECRET_KEY) {
-        return res.status(500).json({ error: 'JWT secret is not configured' });
-    }
-
-    try {
-        const user = jwt.verify(token, SECRET_KEY);
-        if (!['admin', 'system'].includes(normalizeRole(user?.role))) {
-            return res.status(403).json({ error: 'Forbidden: admin registration requires Admin/System permissions' });
-        }
-        req.user = user;
-        return next();
-    } catch {
-        return res.status(403).json({ error: 'Invalid token' });
-    }
-};
-
-
-app.post('/register', authorizeAdminRegistration, async (req, res) => {
+app.post('/register', authenticateToken, requireRoles('system'), async (req, res) => {
     const { firstName, lastName, username, contactNumber, password, organizationId } = req.body;
-    const roleId = 2; // Hardcoded for Admin role (Only Admins can register)
+    const roleId = ADMIN_ROLE_ID;
 
     // Validate required fields
     if (!firstName || !lastName || !username || !contactNumber || !password || !organizationId) {
@@ -372,20 +346,22 @@ app.post('/register', authorizeAdminRegistration, async (req, res) => {
                 return res.status(400).json({ error: 'User already exists' });
             }
 
-            const existingAdmins = await query(
-                "SELECT User_ID FROM Admin WHERE Organization_ID = ? LIMIT 1",
-                [organizationId]
-            );
-            if (existingAdmins.length > 0) {
+            const targetOrganization = Number(organizationId);
+            if (!targetOrganization) {
                 await rollback();
-                return res.status(400).json({ error: 'An admin is already registered for this organization' });
+                return res.status(400).json({ error: 'A valid clinic is required' });
+            }
+            const organizations = await query('SELECT Organization_ID FROM Organization WHERE Organization_ID = ? AND IsActive = 1', [targetOrganization]);
+            if (!organizations.length) {
+                await rollback();
+                return res.status(404).json({ error: 'Active clinic not found' });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
             const insertUserSQL = `
                 INSERT INTO User 
-                (First_Name, Last_Name, Email, Contact_Number, Password, Role_ID, Created_Date, IsActive) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW(), 1)
+                (First_Name, Last_Name, Email, Contact_Number, Password, Role_ID, Created_Date, IsActive, Must_Change_Password)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), 1, 1)
             `;
             const userResult = await query(insertUserSQL, [
                 firstName,
@@ -398,7 +374,7 @@ app.post('/register', authorizeAdminRegistration, async (req, res) => {
 
             await query(
                 `INSERT INTO Admin (User_ID, Organization_ID) VALUES (?, ?)`,
-                [userResult.insertId, organizationId]
+                [userResult.insertId, targetOrganization]
             );
 
             await commit();
@@ -416,6 +392,98 @@ app.post('/register', authorizeAdminRegistration, async (req, res) => {
             connection.release();
         }
     });
+});
+
+const validatePassword = (password) => typeof password === 'string' && password.length >= 12
+    && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+
+app.post('/change-password', authenticateToken, async (req, res) => {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !validatePassword(newPassword)) {
+        return sendApiError(res, 400, 'INVALID_PASSWORD', 'New password must be at least 12 characters and include uppercase, lowercase, number, and symbol');
+    }
+    try {
+        const rows = await query('SELECT Password, First_Name, Last_Name, Email, Role_ID FROM User WHERE ID = ? AND IsActive = 1', [req.user.id]);
+        if (!rows.length || !(await bcrypt.compare(currentPassword, rows[0].Password))) {
+            return sendApiError(res, 401, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect');
+        }
+        if (await bcrypt.compare(newPassword, rows[0].Password)) {
+            return sendApiError(res, 400, 'PASSWORD_REUSE', 'New password must differ from the current password');
+        }
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        await query('UPDATE User SET Password = ?, Must_Change_Password = 0 WHERE ID = ?', [passwordHash, req.user.id]);
+        const tokenPayload = { ...req.user, mustChangePassword: false };
+        delete tokenPayload.iat; delete tokenPayload.exp;
+        const token = jwt.sign(tokenPayload, SECRET_KEY, { expiresIn: JWT_EXPIRES_IN });
+        return res.json({ success: true, token, user: { id: req.user.id, name: `${rows[0].First_Name} ${rows[0].Last_Name}`, email: rows[0].Email, role: normalizeRole(req.user.role), organizationId: req.user.organizationId || null, mustChangePassword: false } });
+    } catch (error) {
+        console.error(error);
+        return sendApiError(res, 500, 'PASSWORD_CHANGE_FAILED', 'Unable to change password');
+    }
+});
+
+const normalizeClinic = (row) => ({
+    clinicID: row.Organization_ID, name: row.Name, address: row.Address, description: row.Description,
+    coordinates: row.Coordinates, type: row.Type, isActive: Boolean(row.IsActive),
+    createdDate: row.Created_Date, modifiedDate: row.Modified_Date, adminCount: Number(row.Admin_Count || 0)
+});
+
+app.get('/clinics', authenticateToken, requireRoles('system'), async (_req, res) => {
+    try {
+        const rows = await query(`SELECT Organization.*, COUNT(Admin.User_ID) AS Admin_Count FROM Organization
+            LEFT JOIN Admin ON Admin.Organization_ID = Organization.Organization_ID
+            GROUP BY Organization.Organization_ID ORDER BY Organization.Name`);
+        return res.json({ success: true, data: rows.map(normalizeClinic) });
+    } catch (error) { console.error(error); return sendApiError(res, 500, 'CLINIC_LIST_FAILED', 'Unable to load clinics'); }
+});
+
+app.post('/clinics', authenticateToken, requireRoles('system'), async (req, res) => {
+    const { name, address, description, coordinates, type = 'Dental Clinic', admin } = req.body || {};
+    if (!name || !address || !admin?.firstName || !admin?.lastName || !admin?.email || !admin?.contactNumber || !validatePassword(admin?.password)) {
+        return sendApiError(res, 400, 'INVALID_CLINIC', 'Clinic name, address, and a first admin with a strong temporary password are required');
+    }
+    let connection;
+    try {
+        connection = await db.promise().getConnection(); await connection.beginTransaction();
+        const [duplicate] = await connection.query('SELECT ID FROM User WHERE Email = ? LIMIT 1', [admin.email]);
+        if (duplicate.length) { const error = new Error('Admin email already exists'); error.statusCode = 409; throw error; }
+        const [lastClinic] = await connection.query('SELECT Organization_ID FROM Organization ORDER BY Organization_ID DESC LIMIT 1 FOR UPDATE');
+        const clinicID = Number(lastClinic[0]?.Organization_ID || 0) + 1;
+        await connection.query(`INSERT INTO Organization
+            (Organization_ID, Name, Address, Description, Coordinates, Type, IsActive, Created_Date) VALUES (?, ?, ?, ?, ?, ?, 1, NOW())`,
+            [clinicID, name, address, description || null, coordinates || null, type]);
+        const passwordHash = await bcrypt.hash(admin.password, 10);
+        const [userResult] = await connection.query(`INSERT INTO User
+            (First_Name, Last_Name, Password, Email, Contact_Number, Role_ID, Created_Date, IsActive, Must_Change_Password)
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), 1, 1)`, [admin.firstName, admin.lastName, passwordHash, admin.email, admin.contactNumber, ADMIN_ROLE_ID]);
+        await connection.query('INSERT INTO Admin (Organization_ID, User_ID) VALUES (?, ?)', [clinicID, userResult.insertId]);
+        await connection.commit();
+        return res.status(201).json({ success: true, data: { clinicID, primaryAdminID: userResult.insertId } });
+    } catch (error) {
+        if (connection) await connection.rollback(); console.error(error);
+        return sendApiError(res, error.statusCode || 500, 'CLINIC_CREATE_FAILED', error.message || 'Unable to create clinic');
+    } finally { if (connection) connection.release(); }
+});
+
+app.patch('/clinics/:id', authenticateToken, requireRoles('system'), async (req, res) => {
+    const clinicID = Number(req.params.id); const { name, address, description, coordinates, type, isActive } = req.body || {};
+    if (!clinicID || !name || !address || typeof isActive !== 'boolean') return sendApiError(res, 400, 'INVALID_CLINIC', 'Valid clinic name, address, and status are required');
+    try {
+        const result = await query(`UPDATE Organization SET Name=?, Address=?, Description=?, Coordinates=?, Type=?, IsActive=?, Modified_Date=NOW() WHERE Organization_ID=?`,
+            [name, address, description || null, coordinates || null, type || 'Dental Clinic', isActive ? 1 : 0, clinicID]);
+        if (!result.affectedRows) return sendApiError(res, 404, 'CLINIC_NOT_FOUND', 'Clinic not found');
+        return res.json({ success: true });
+    } catch (error) { console.error(error); return sendApiError(res, 500, 'CLINIC_UPDATE_FAILED', 'Unable to update clinic'); }
+});
+
+app.get('/clinic-admins', authenticateToken, requireRoles('admin', 'system'), async (req, res) => {
+    const requestedClinic = Number(req.query.clinicID || req.user.organizationId);
+    if (!requestedClinic || (normalizeRole(req.user.role) === 'admin' && requestedClinic !== Number(req.user.organizationId))) return sendApiError(res, 403, 'CLINIC_SCOPE_DENIED', 'Clinic scope is not permitted');
+    try {
+        const rows = await query(`SELECT User.ID, User.First_Name, User.Last_Name, User.Email, User.Contact_Number, User.IsActive,
+            Admin.Organization_ID FROM Admin JOIN User ON User.ID=Admin.User_ID WHERE Admin.Organization_ID=? ORDER BY User.Last_Name`, [requestedClinic]);
+        return res.json({ success: true, data: rows.map((row) => ({ id: row.ID, firstName: row.First_Name, lastName: row.Last_Name, email: row.Email, contactNumber: row.Contact_Number, clinicID: row.Organization_ID, isActive: Boolean(row.IsActive) })) });
+    } catch (error) { console.error(error); return sendApiError(res, 500, 'ADMIN_LIST_FAILED', 'Unable to load clinic admins'); }
 });
 
 const DOCTOR_SELECT = `SELECT Doctor.*, User.First_Name, User.Last_Name, User.Email, User.Contact_Number, User.Created_Date

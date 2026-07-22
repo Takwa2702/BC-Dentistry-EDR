@@ -1,12 +1,14 @@
-FROM node:18
+FROM node:18-bookworm-slim
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
 COPY . .
 
-EXPOSE 3000
+RUN mkdir -p /app/runtime /app/data/radiographic-files
 
-CMD ["node", "index.js"]
+EXPOSE 8081
+
+CMD ["sh", "-c", "node prepareContainerConnectionProfile.js && exec node index.js"]

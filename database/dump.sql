@@ -810,6 +810,7 @@ CREATE TABLE `Organization` (
   `Description` text,
   `Coordinates` varchar(255) DEFAULT NULL,
   `Type` varchar(255) DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
   `Created_Date` date DEFAULT NULL,
   `Modified_Date` date DEFAULT NULL,
   PRIMARY KEY (`Organization_ID`)
@@ -1060,6 +1061,7 @@ CREATE TABLE `User` (
   `Role_ID` int DEFAULT NULL,
   `Created_Date` date DEFAULT NULL,
   `IsActive` tinyint(1) DEFAULT NULL,
+  `Must_Change_Password` tinyint(1) NOT NULL DEFAULT '0',
   `Last_Login_Date` date DEFAULT NULL,
   PRIMARY KEY (`ID`),
   KEY `Role_ID` (`Role_ID`),
@@ -1073,7 +1075,7 @@ CREATE TABLE `User` (
 
 LOCK TABLES `User` WRITE;
 /*!40000 ALTER TABLE `User` DISABLE KEYS */;
-INSERT INTO `User` VALUES (9,'Admin2','User2','$2b$10$v5lsbuAYwdZQzZ/hN.FVL.6lYJwnZLBjfD6sW66/H8GqMXFtncwGK','admin2@gmail.com','1234567890',2,'2025-02-03',1,'2025-07-17'),(10,'Admin1','User1','$2b$10$WEDbeiz3VjsRUcgYiKhw..2oTKmGE/lxeMNV2Haqx05MlASU7/hI2','admin1@gmail.com','1234567890',2,'2025-02-03',1,'2025-07-17'),(15,'Alice','Wong','$2b$10$VDdk6Dc75k7jJp.bNsDjM.scicJoNlBJGqdzAs2b0Layd5sN1so3G','doctor1@example.com','0509876543',3,'2025-02-03',1,'2025-07-17'),(16,'Bob','Smith','$2b$10$tg8rV6u4PeIxDKy.TcoB.eIHsV3TLABYxSs3ZgPR9CHPVgFs4M42a','doctor2@example.com','0509871234',3,'2025-02-03',1,'2025-06-17'),(17,'John','Doe','$2b$10$ZJP0KFBm9N.CjOCvJX6pQOKV.3fyqyd2kyu1irqsjjEy9MZBSFgl6','john.doe@example.com','0501234567',4,'2025-03-26',1,'2025-05-08'),(18,'Jane','Doe','$2b$10$JKimR5gHhcYtI50k0FvDveM7dEsqq6s7gbmlTOh2sahbhTOabsveG','jane.doe@example.com','0507654321',4,'2025-03-26',1,NULL),(19,'Mark','Lee','$2b$10$jTozqpdqC0uSi1DNcT8VG.CY/bdUqhIvafgoN.wXJ8wkRSTjJhkz.','mark.lee@example.com','0502468135',4,'2025-03-26',1,NULL);
+INSERT INTO `User` VALUES (9,'Admin2','User2','$2b$10$v5lsbuAYwdZQzZ/hN.FVL.6lYJwnZLBjfD6sW66/H8GqMXFtncwGK','admin2@gmail.com','1234567890',2,'2025-02-03',1,0,'2025-07-17'),(10,'Admin1','User1','$2b$10$WEDbeiz3VjsRUcgYiKhw..2oTKmGE/lxeMNV2Haqx05MlASU7/hI2','admin1@gmail.com','1234567890',2,'2025-02-03',1,0,'2025-07-17'),(15,'Alice','Wong','$2b$10$VDdk6Dc75k7jJp.bNsDjM.scicJoNlBJGqdzAs2b0Layd5sN1so3G','doctor1@example.com','0509876543',3,'2025-02-03',1,0,'2025-07-17'),(16,'Bob','Smith','$2b$10$tg8rV6u4PeIxDKy.TcoB.eIHsV3TLABYxSs3ZgPR9CHPVgFs4M42a','doctor2@example.com','0509871234',3,'2025-02-03',1,0,'2025-06-17'),(17,'John','Doe','$2b$10$ZJP0KFBm9N.CjOCvJX6pQOKV.3fyqyd2kyu1irqsjjEy9MZBSFgl6','john.doe@example.com','0501234567',4,'2025-03-26',1,0,'2025-05-08'),(18,'Jane','Doe','$2b$10$JKimR5gHhcYtI50k0FvDveM7dEsqq6s7gbmlTOh2sahbhTOabsveG','jane.doe@example.com','0507654321',4,'2025-03-26',1,0,NULL),(19,'Mark','Lee','$2b$10$jTozqpdqC0uSi1DNcT8VG.CY/bdUqhIvafgoN.wXJ8wkRSTjJhkz.','mark.lee@example.com','0502468135',4,'2025-03-26',1,0,NULL);
 /*!40000 ALTER TABLE `User` ENABLE KEYS */;
 UNLOCK TABLES;
 

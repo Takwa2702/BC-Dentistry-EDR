@@ -1,62 +1,94 @@
-# =============================================================================
-# Blockchain-Based EDR System — Off-chain Services
-# =============================================================================
-# This compose file brings up the off-chain dependencies (MySQL) and, optionally,
-# the two Node.js API services.
-#
-# It does NOT start the Hyperledger Fabric network. Fabric is launched separately
-# via fabric-samples/test-network/network.sh (see docs/SETUP.md, Step 1).
-#
-# Usage:
-#   1. Copy .env.example files to .env in each service folder and fill in values.
-#   2. Set MYSQL_ROOT_PASSWORD below (or via a .env file in this directory).
-#   3. docker compose up -d mysql        # MySQL only
-#      docker compose up -d              # MySQL + both APIs
-# =============================================================================
+name: edr
 
+# Application Compose boundary: every long-running non-Fabric server service.
+# Hyperledger Fabric peers, orderer, CAs, chaincode containers, and generated
+# crypto material remain managed by fabric-samples/test-network/network.sh.
+# The Expo mobile app is a client/build artifact and is intentionally excluded.
 services:
-
   mysql:
     image: mysql:9.0.1
-    container_name: edr-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-CHANGE_ME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-mydatabase}
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - edr-mysql-data:/var/lib/mysql
-      # Schema + seed data are auto-imported on first container creation.
-      # Files in this folder run in alphabetical order.
       - ./database:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-CHANGE_ME}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 30s
 
-  # ---------------------------------------------------------------------------
-  # Database API (off-chain). Reads/writes clinical data in MySQL.
-  # Comment this block out if you prefer to run `node server.js` manually.
-  # ---------------------------------------------------------------------------
+  blockchain-api:
+    build:
+      context: ./dental-backend
+    restart: unless-stopped
+    environment:
+      PORT: 8081
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      FABRIC_CHANNEL: ${FABRIC_CHANNEL:-mychannel}
+      FABRIC_CHAINCODE: ${FABRIC_CHAINCODE:-basic}
+      FABRIC_DISCOVERY_ENABLED: ${FABRIC_DISCOVERY_ENABLED:-true}
+      FABRIC_DISCOVERY_AS_LOCALHOST: "false"
+      FABRIC_CONNECTION_PROFILE_SOURCE: /fabric-connection/connection-org1.json
+      FABRIC_CONNECTION_PROFILE: /app/runtime/connection-org1.container.json
+      FABRIC_WALLET_PATH: /fabric-wallet
+      FABRIC_HOST_GATEWAY: host.docker.internal
+      RADIOGRAPHIC_STORAGE_ROOT: /var/lib/edr/radiographic-files
+      RADIOGRAPHIC_MAX_FILE_BYTES: ${RADIOGRAPHIC_MAX_FILE_BYTES:-536870912}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "peer0.org1.example.com:host-gateway"
+      - "peer0.org2.example.com:host-gateway"
+      - "orderer.example.com:host-gateway"
+      - "ca.org1.example.com:host-gateway"
+    volumes:
+      - ${FABRIC_CONNECTION_DIR:-./dental-backend/connection}:/fabric-connection:ro
+      - ${FABRIC_WALLET_DIR:-./dental-backend/wallet}:/fabric-wallet:ro
+      - edr-radiographic-files:/var/lib/edr/radiographic-files
+    ports:
+      - "${BLOCKCHAIN_API_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   database-api:
     build:
       context: ./backend
-    container_name: edr-database-api
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
-    env_file:
-      - ./backend/.env
+      blockchain-api:
+        condition: service_healthy
     environment:
-      # Override host so the API reaches MySQL by service name inside the network
+      PORT: 8080
       DB_HOST: mysql
-      # The blockchain API is normally run on the Windows host for Fabric SDK access.
-      BLOCKCHAIN_API_URL: http://host.docker.internal:8081
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-mydatabase}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      ADMIN_BOOTSTRAP_TOKEN: ${ADMIN_BOOTSTRAP_TOKEN:-}
+      BLOCKCHAIN_API_URL: http://blockchain-api:8081
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     ports:
-      - "8080:8080"
+      - "${DATABASE_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   web-frontend:
     build:
@@ -64,34 +96,21 @@ services:
       args:
         VITE_DATABASE_API_URL: /api/database
         VITE_BLOCKCHAIN_API_URL: /api/blockchain
-    container_name: edr-web-frontend
     restart: unless-stopped
     depends_on:
-      - database-api
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      database-api:
+        condition: service_healthy
+      blockchain-api:
+        condition: service_healthy
     ports:
-      - "5173:80"
-
-  # ---------------------------------------------------------------------------
-  # Blockchain API. Talks to the Fabric network via the Fabric SDK.
-  # NOTE: This service needs the Fabric network running on the host and a valid
-  # connection profile + wallet (see docs/SETUP.md, Step 5). Running it in a
-  # container requires host networking so it can reach localhost:7051/9051.
-  # For most testing it is simpler to run `node index.js` directly on the host.
-  # The block below is provided for reference; uncomment if you containerize it.
-  # ---------------------------------------------------------------------------
-  # blockchain-api:
-  #   build:
-  #     context: ./dental-backend
-  #   container_name: edr-blockchain-api
-  #   restart: unless-stopped
-  #   network_mode: host
-  #   env_file:
-  #     - ./dental-backend/.env
-  #   volumes:
-  #     - ./dental-backend/connection:/app/connection
-  #     - ./dental-backend/wallet:/app/wallet
+      - "${WEB_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   edr-mysql-data:
+  edr-radiographic-files:
