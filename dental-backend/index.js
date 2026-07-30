@@ -769,7 +769,7 @@ app.get('/getAllPatients', authenticateToken, requireRoles('admin', 'system'), a
 
 app.get('/doctor/me/assigned-patients', authenticateToken, requireRoles('doctor'), async (req, res) => {
     try {
-        if (!req.user.blockchainID) return sendError(res, 403, 'DOCTOR_IDENTITY_MISSING', 'Authenticated doctor has no blockchain identity');
+        if (!req.user.blockchainID) return sendApiError(res, 403, 'DOCTOR_IDENTITY_MISSING', 'Authenticated doctor has no blockchain identity');
         const result = await withContract(req, (contract) => contract.evaluateTransaction('getPatientsAssignedToDoctor', String(req.user.blockchainID)));
         return sendSuccess(res, parseBufferJson(result));
     } catch (error) { return sendFabricError(res, error); }
