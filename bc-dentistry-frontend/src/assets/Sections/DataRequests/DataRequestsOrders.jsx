@@ -1,140 +1,124 @@
-// import React from 'react';
-// import UpcomingDataRequest from './UpcomingDataRequest'
-
-// import { OnHoldRequests } from '../../../../dataRequests';
-
-
-// const DataRequestsOrders = () => {
-//     return (
-//         <div id="DataRequestsOrders" className="p-6 bg-white p-3 rounded-xl border">
-//             <h2 className="text-3xl font-bold mb-6">Requests</h2>
-//             <div className="bg-white rounded-md">
-//                 {/* Add multiple UpcomingDataRequest components as needed */}
-                
-//                 {
-//                     OnHoldRequests.map((request) => {
-//                         return <UpcomingDataRequest 
-//                             key={request.header}
-//                             header={request.header}
-//                             details={request.description}
-//                             type={request.type}
-//                          />
-//                     })
-//                 }
-
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default DataRequestsOrders;
 import React, { useEffect, useState } from 'react';
 import UpcomingDataRequest from './UpcomingDataRequest';
-import { DataRequestsData } from '../../../../dataRequests'; // Import the global data store
+import { authHeaders, blockchainUrl, jsonHeaders } from '../../config/api.js';
+import { getStoredUser } from '../../utils/auth.js';
+import ActionDialog from '../../components/ActionDialog.jsx';
 
-const DataRequestsOrders = () => {
+const DataRequestsOrders = ({ onChanged }) => {
     const [onHoldRequests, setOnHoldRequests] = useState([]);
-    const user = JSON.parse(localStorage.getItem("user")); // Retrieve user details
-    const adminClinicID = user.organizationId; // Admin's clinic ID
-    const adminID = user.id;
-
-    // console.log("Admin ID:", adminID); 
+    const [feedback, setFeedback] = useState({ error: '', notice: '' });
+    const [rejecting, setRejecting] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('Request does not meet clinic policy');
+    const [busy, setBusy] = useState(false);
+    const user = getStoredUser();
+    const adminClinicID = user?.organizationId;
+    const adminID = user?.id;
 
     useEffect(() => {
         const fetchRequests = async () => {
-            try {
-                const response = await fetch(`http://localhost:8081/getRequestsForAdmin/${adminClinicID}`);
-                const data = await response.json();
-                console.log("Fetched Admin Requests:", data);
+            if (!adminClinicID) return;
 
-                if (Array.isArray(data)) {
+            try {
+                const response = await fetch(blockchainUrl(`/getRequestsForAdmin/${adminClinicID}`), {
+                    headers: authHeaders(),
+                });
+                const data = await response.json();
+                const requests = data.data || data;
+
+                if (Array.isArray(requests)) {
                     setOnHoldRequests(
-                        data
-                            .filter(request => request.status === 'PENDING_ADMIN_APPROVAL') // ✅ Only show pending requests
-                            .map(request => ({
+                        requests
+                            .filter((request) => request.status === 'PENDING_ADMIN_APPROVAL')
+                            .map((request) => ({
                                 requestID: request.requestID,
-                                doctorID: request.doctorID,
-                                patientID: request.patientID,
-                                header: `Request from ${request.doctorID}`,
-                                description: `Patient: ${request.patientID}, Status: ${request.status}`,
-                                type: 'on-chain'
-                            }))
+                                header: `Request from ${request.doctorName || request.doctorID}`,
+                                description: `Patient: ${request.patientID}\nData: ${request.dataType || 'Medical/Dental Data'}\nPurpose: ${request.purpose || request.reason || 'Not supplied'}`,
+                                type: 'on-chain',
+                            })),
                     );
                 } else {
-                    console.error("Unexpected response format:", data);
+                    console.error('Unexpected response format:', data);
                 }
             } catch (error) {
-                console.error("Failed to fetch admin requests:", error);
+                console.error('Failed to fetch admin requests:', error);
             }
         };
 
         fetchRequests();
-    }, []);
+    }, [adminClinicID]);
 
-    // Function to approve a request
-    const handleApproveRequest = async (requestID, doctorID, patientID) => {
+    const handleApproveRequest = async (requestID) => {
         try {
-            const response = await fetch(`http://localhost:8081/approveRequest`, {
+            const response = await fetch(blockchainUrl('/approveRequest'), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    adminID: adminID, 
-                    requestID: requestID,
-                    adminClinicID: adminClinicID
-                }),
+                headers: jsonHeaders(),
+                body: JSON.stringify({ adminID, requestID, adminClinicID }),
             });
-
             const data = await response.json();
-            console.log("Approval Response:", data);
 
             if (response.ok) {
-                alert(`Request ${requestID} approved! Now waiting for patient consent.`);
-
-                // ✅ Remove request from onHoldRequests state
-                setOnHoldRequests(prevRequests =>
-                    prevRequests.filter(request => request.requestID !== requestID)
-                );
-
-                // ✅ Add request to DataRequestsData with PENDING_PATIENT_CONSENT status
-                DataRequestsData.push({
-                    requestId: requestID,
-                    type: 'on-chain',
-                    dataType: 'Medical/Dental Data',
-                    fileType: 'N/A',
-                    description: `Request approved by Admin. Waiting for patient consent.`,
-                    requester: doctorID,
-                    status: 'PENDING_PATIENT_CONSENT',
-                    data: {}
-                });
+                setFeedback({ error: '', notice: `Request ${requestID} approved. Patient consent is now required.` });
+                setOnHoldRequests((requests) => requests.filter((request) => request.requestID !== requestID));
+                onChanged?.();
             } else {
-                alert(`Error: ${data.message || "Failed to approve request."}`);
+                setFeedback({ error: data?.error?.message || data.message || 'Failed to approve request.', notice: '' });
             }
         } catch (error) {
-            console.error("Failed to approve request:", error);
-            alert("Error approving request. Please try again later.");
+            console.error('Failed to approve request:', error);
+            setFeedback({ error: 'Error approving request. Please try again later.', notice: '' });
+        }
+    };
+
+    const handleRejectRequest = async () => {
+        const requestID = rejecting;
+        if (!rejectionReason.trim()) return setFeedback({ error: 'Enter a rejection reason.', notice: '' });
+        setBusy(true); setFeedback({ error: '', notice: '' });
+        try {
+            const response = await fetch(blockchainUrl('/admin/rejectRequest'), {
+                method: 'POST',
+                headers: jsonHeaders(),
+                body: JSON.stringify({ adminID, requestID, adminClinicID, rejectionReason }),
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                setFeedback({ error: '', notice: `Request ${requestID} rejected.` });
+                setRejecting(null);
+                setOnHoldRequests((requests) => requests.filter((request) => request.requestID !== requestID));
+                onChanged?.();
+            } else {
+                setFeedback({ error: data?.error?.message || data.message || 'Failed to reject request.', notice: '' });
+            }
+        } catch (error) {
+            console.error('Failed to reject request:', error);
+            setFeedback({ error: 'Error rejecting request. Please try again later.', notice: '' });
+        } finally {
+            setBusy(false);
         }
     };
 
     return (
-        <div id="DataRequestsOrders" className="p-6 bg-white p-3 rounded-xl border">
-            <h2 className="text-3xl font-bold mb-6">Requests</h2>
+        <div id="DataRequestsOrders" className="p-6 bg-white rounded-xl border">
+            <h2 className="text-3xl font-bold mb-6">Pending Admin Review</h2>
+            {feedback.error && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-red-800">{feedback.error}</p>}
+            {feedback.notice && <p role="status" className="mb-4 rounded bg-green-50 p-3 text-green-800">{feedback.notice}</p>}
             <div className="bg-white rounded-md">
                 {onHoldRequests.length > 0 ? (
-                    onHoldRequests.map((request, index) => (
-                        <UpcomingDataRequest 
-                            key={index}
+                    onHoldRequests.map((request) => (
+                        <UpcomingDataRequest
+                            key={request.requestID}
                             header={request.header}
                             details={request.description}
                             type={request.type}
-                            onApprove={() => handleApproveRequest(request.requestID, request.doctorID, request.patientID)}
+                            onApprove={() => handleApproveRequest(request.requestID)}
+                            onReject={() => { setRejectionReason('Request does not meet clinic policy'); setFeedback({error:'',notice:''}); setRejecting(request.requestID); }}
                         />
                     ))
                 ) : (
                     <p className="text-gray-600 text-sm">No pending requests.</p>
                 )}
             </div>
+            {rejecting && <ActionDialog title={`Reject request ${rejecting}`} description="Provide the reason that will be recorded for this decision." confirmLabel="Reject request" danger busy={busy} error={feedback.error} onClose={() => setRejecting(null)} onConfirm={handleRejectRequest}><label className="text-sm font-semibold">Rejection reason<textarea value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} className="mt-2 block min-h-28 w-full rounded-md border p-3" /></label></ActionDialog>}
         </div>
     );
 };

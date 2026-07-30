@@ -21,7 +21,7 @@ class ReadPatientWorkload extends WorkloadModuleBase {
         return this.sutAdapter.sendRequests({
             contractId: 'basic',       // adjust if your chaincode name is different
             contractFunction: 'ReadPatient',
-            invokerIdentity: 'User1',           // this should match the identity in your network config
+            invokerIdentity: 'Admin2',
             contractArguments: [id],
             readOnly: true
         });

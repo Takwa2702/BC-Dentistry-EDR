@@ -3,26 +3,32 @@ import { useEffect, useState } from 'react';
 import React from 'react'
 import axios from 'axios';
 import { NoRequests, Document } from '../components';
-
-
-
-const API_BASE_URL = 'http://openuae.fortiddns.com:28081'; 
+import { authHeaders, blockchainUrl, getPatientBlockchainID } from '../utils/api';
+import { useUser } from '../Context/UserContext';
 
 
 
 const documents = () => {
     const [ documents, setDocuments ] = useState([])
     const [ loading, setIsLoading ] = useState(false)
+    const { user, token } = useUser()
+    const patientID = getPatientBlockchainID(user)
 
     
 
     useEffect(() => {
         const fetchDoucments = async () => {
+            if (!token || !patientID) {
+                return
+            }
+
             try{
                 setIsLoading(true)
-                const response = axios.get(`${API_BASE_URL}/getAllRequestsForPatient/Patient1`)
+                const response = await axios.get(blockchainUrl(`/getAllRequestsForPatient/${patientID}`), {
+                    headers: authHeaders(token),
+                })
 
-                const uploadedDocuments = await response.data?.filter((data) => {data.documents})
+                const uploadedDocuments = response.data?.filter((data) => data.documents)
                 uploadedDocuments == undefined ? setDocuments([]) : setDocuments(uploadedDocuments)
                 console.log(documents);
                 
@@ -37,7 +43,7 @@ const documents = () => {
 
         fetchDoucments()
 
-    }, [])
+    }, [token, patientID])
 
   return (
     <SafeAreaView>

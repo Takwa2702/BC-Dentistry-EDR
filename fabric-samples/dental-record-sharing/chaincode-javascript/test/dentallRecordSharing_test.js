@@ -1,113 +1,185 @@
-/*
- * Copyright IBM Corp. All Rights Reserved.
- *
- * SPDX-License-Identifier: Apache-2.0
-*/
-
 'use strict';
+
+const { expect } = require('chai');
 const sinon = require('sinon');
-const chai = require('chai');
-const sinonChai = require('sinon-chai');
-const expect = chai.expect;
+const DentalRecordSharing = require('../lib/dentalRecordSharing');
 
-const { Context } = require('fabric-contract-api');
-const { ChaincodeStub } = require('fabric-shim');
+const identity = (role, actorID = `${role}1`, mspID = 'Org1MSP', clinicID = null) => ({
+    getMSPID: sinon.stub().returns(mspID),
+    getAttributeValue: sinon.stub().callsFake((name) => ({ role, actorID, clinicID }[name])),
+});
 
-const MyChaincode = require('../lib/dentalRecordSharing.js'); // Adjust path based on your structure
+const context = (role, actorID, mspID = 'Org1MSP', clinicID = null) => ({
+    clientIdentity: identity(role, actorID, mspID, clinicID),
+    stub: {
+        getState: sinon.stub().resolves(Buffer.alloc(0)),
+        putState: sinon.stub().resolves(),
+        deleteState: sinon.stub().resolves(),
+        getTxID: sinon.stub().returns('tx-1'),
+        getTxTimestamp: sinon.stub().returns({ seconds: { toString: () => '1783872000' }, nanos: 0 }),
+    },
+});
 
-let assert = sinon.assert;
-chai.use(sinonChai);
+const expectReject = async (promise, message) => {
+    try {
+        await promise;
+        expect.fail('Expected transaction to be rejected');
+    } catch (error) {
+        expect(error.message).to.include(message);
+    }
+};
 
-describe('Doctor and Patient Management Tests', () => {
-    let transactionContext, chaincodeStub;
+describe('Phase 2 chaincode identity enforcement', () => {
+    let contract;
 
     beforeEach(() => {
-        chaincodeStub = sinon.createStubInstance(ChaincodeStub);
-        transactionContext = new Context(chaincodeStub);
-
-        // Stub putState to mimic blockchain state storage
-        chaincodeStub.putState.callsFake((key, value) => {
-            if (!chaincodeStub.states) {
-                chaincodeStub.states = {};
-            }
-            chaincodeStub.states[key] = value;
-        });
-
-        // Stub getState to mimic blockchain state retrieval
-        chaincodeStub.getState.callsFake(async (key) => {
-            let ret;
-            if (chaincodeStub.states) {
-                ret = chaincodeStub.states[key];
-            }
-            return Promise.resolve(ret);
-        });
+        contract = new DentalRecordSharing();
     });
 
-    describe('Test addDoctor', () => {
-        it('should allow admin to add a doctor', async () => {
-            // Mock the context for an admin user
-            const creator = Buffer.from(JSON.stringify({
-                mspid: 'Org1MSP',
-                id_bytes: Buffer.from('adminUser'),
-                attributes: [{ name: 'role', value: 'admin' }]
-            }));
-            chaincodeStub.getCreator.returns(creator);
-
-            let chaincode = new MyChaincode();
-            const response = await chaincode.addDoctor(transactionContext, 'D001', 'John', 'Doe', 'Dentist', 'Clinic A', 'john@example.com', '1234567890', '2024-10-16', []);
-            expect(response).to.include('D001');
-        });
-
-        it('should not allow non-admin to add a doctor', async () => {
-            // Mock the context for a non-admin user
-            const creator = Buffer.from(JSON.stringify({
-                mspid: 'Org1MSP',
-                id_bytes: Buffer.from('nonAdminUser'),
-                attributes: [{ name: 'role', value: 'user' }]
-            }));
-            chaincodeStub.getCreator.returns(creator);
-
-            let chaincode = new MyChaincode();
-            try {
-                await chaincode.addDoctor(transactionContext, 'D002', 'Jane', 'Doe', 'Orthodontist', 'Clinic B', 'jane@example.com', '0987654321', '2024-10-16', []);
-                assert.fail('Expected error was not thrown');
-            } catch (error) {
-                expect(error.message).to.equal('Only admins can add doctors.');
-            }
-        });
+    it('allows an admin certificate to add a doctor', async () => {
+        const ctx = context('admin', 'Admin1', 'Org1MSP', '1');
+        const result = await contract.addDoctor(
+            ctx, 'Doctor9', 'Ada', 'Lovelace', 'EID9', 'Dentist', 'Clinic A', '1',
+            'ada@example.com', '0500000000', '2026-07-10', '[]'
+        );
+        expect(JSON.parse(result).doctorID).to.equal('Doctor9');
     });
 
-    describe('Test addPatient', () => {
-        it('should allow admin to add a patient', async () => {
-            // Mock the context for an admin user
-            const creator = Buffer.from(JSON.stringify({
-                mspid: 'Org1MSP',
-                id_bytes: Buffer.from('adminUser'),
-                attributes: [{ name: 'role', value: 'admin' }]
-            }));
-            chaincodeStub.getCreator.returns(creator);
+    it('rejects a doctor certificate on an admin patient-management path', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        await expectReject(contract.addPatient(
+            ctx, 'Patient9', 'Pat', 'Nine', '1990-01-01', 'Other', 'EID-P9',
+            'pat9@example.com', '0500000001', 'Dubai', '2026-07-10', '1', '[]'
+        ), 'Access denied: requires admin role.');
+    });
 
-            let chaincode = new MyChaincode();
-            const response = await chaincode.addPatient(transactionContext, 'P001', 'Alice', 'Smith', '1990-01-01', 'female', 'EID123456', 'alice@example.com', '9876543210', 'Address A', '2024-10-16', []);
-            expect(response).to.include('P001');
-        });
+    it('rejects an admin certificate for another clinic', async () => {
+        const ctx = context('admin', 'Admin1', 'Org1MSP', '1');
+        await expectReject(contract.addDoctor(
+            ctx, 'Doctor9', 'Ada', 'Lovelace', 'EID9', 'Dentist', 'Clinic B', '2',
+            'ada@example.com', '0500000000', '2026-07-11', '[]'
+        ), 'admin certificate is not authorized for clinic 2');
+    });
 
-        it('should not allow non-admin to add a patient', async () => {
-            // Mock the context for a non-admin user
-            const creator = Buffer.from(JSON.stringify({
-                mspid: 'Org1MSP',
-                id_bytes: Buffer.from('nonAdminUser'),
-                attributes: [{ name: 'role', value: 'user' }]
-            }));
-            chaincodeStub.getCreator.returns(creator);
+    it('rejects an admin reading another clinic request queue', async () => {
+        const ctx = context('admin', 'Admin1', 'Org1MSP', '1');
+        await expectReject(
+            contract.GetRequestsForAdmin(ctx, '2'),
+            'admin certificate is not authorized for clinic 2'
+        );
+    });
 
-            let chaincode = new MyChaincode();
-            try {
-                await chaincode.addPatient(transactionContext, 'P002', 'Bob', 'Johnson', '1992-02-02', 'male', 'EID654321', 'bob@example.com', '1234567890', 'Address B', '2024-10-16', []);
-                assert.fail('Expected error was not thrown');
-            } catch (error) {
-                expect(error.message).to.equal('Only admins can add patients.');
-            }
-        });
+    it('rejects a doctor enumerating all patients', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        await expectReject(
+            contract.GetAllPatients(ctx),
+            'Access denied: requires admin or system role'
+        );
+    });
+
+    it('rejects non-system ledger initialization', async () => {
+        const ctx = context('admin', 'Admin1', 'Org1MSP', '1');
+        await expectReject(contract.InitLedger(ctx), 'requires system role');
+    });
+
+    it('rejects a doctor calling the public actor-existence helper', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        await expectReject(contract.actorExists(ctx, 'Patient1'), 'requires admin or system role');
+    });
+
+    it('rejects a doctor certificate that requests data as another doctor', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        await expectReject(
+            contract.RequestDataAccess(ctx, 'Doctor2', 'Patient1', '1'),
+            'certificate actorID does not match Doctor2'
+        );
+    });
+
+    it('rejects a patient certificate that reads another patient request queue', async () => {
+        const ctx = context('patient', 'Patient1');
+        await expectReject(
+            contract.GetAllRequestsForPatient(ctx, 'Patient2'),
+            'certificate actorID does not match Patient2'
+        );
+    });
+
+    it('rejects a patient certificate on a system audit-log path', async () => {
+        const ctx = context('patient', 'Patient1');
+        await expectReject(
+            contract.LogAccess(ctx, 'Doctor1', 'Patient1'),
+            'Access denied: requires system role.'
+        );
+    });
+
+    it('rejects a doctor writing records for an unassigned patient', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        ctx.stub.getState.resolves(Buffer.from(JSON.stringify({
+            patientID: 'Patient2', doctors: ['Doctor2'], sharedWith: [], medicalRecords: [],
+        })));
+        await expectReject(
+            contract.AddMedicalRecord(ctx, 'Record2', 'Patient2', 'mysql:Clinical_Record/Record2', 'a'.repeat(64), 'Doctor1', '2026-07-12T00:00:00Z'),
+            'Doctor Doctor1 is not assigned or consented for patient Patient2'
+        );
+    });
+
+    it('allows an assigned doctor to write a medical record', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        ctx.stub.getState.resolves(Buffer.from(JSON.stringify({
+            patientID: 'Patient1', doctors: ['Doctor1'], sharedWith: [], medicalRecords: [],
+        })));
+        const result = JSON.parse(await contract.AddMedicalRecord(ctx, 'Record1', 'Patient1', 'mysql:Clinical_Record/Record1', 'a'.repeat(64), 'Doctor1', '2026-07-12T00:00:00Z'));
+        expect(result.recordType).to.equal('medical');
+        expect(result).not.to.have.property('payload');
+        expect(ctx.stub.putState.calledWith('CLINICAL:Record1')).to.equal(true);
+    });
+
+    it('allows a patient certificate to read its own medical records', async () => {
+        const ctx = context('patient', 'Patient1');
+        const patient = { patientID: 'Patient1', clinicalRecordIDs: ['Record1'] };
+        const metadata = { recordID: 'Record1', recordType: 'medical', patientID: 'Patient1', offChainRef: 'mysql:Clinical_Record/Record1', dataHash: 'a'.repeat(64) };
+        ctx.stub.getState.callsFake(async key => Buffer.from(JSON.stringify(key === 'Patient1' ? patient : metadata)));
+        const records = JSON.parse(await contract.GetMedicalRecords(ctx, 'Patient1'));
+        expect(records).to.deep.equal([metadata]);
+    });
+
+    it('rejects a patient certificate reading another patient medical records', async () => {
+        const ctx = context('patient', 'Patient1');
+        ctx.stub.getState.resolves(Buffer.from(JSON.stringify({
+            patientID: 'Patient2', medicalRecords: [],
+        })));
+        await expectReject(
+            contract.GetMedicalRecords(ctx, 'Patient2'),
+            'patient certificate does not own Patient2'
+        );
+    });
+
+    it('stores only radiographic metadata and SHA-256 for an assigned doctor', async () => {
+        const ctx = context('doctor', 'Doctor1');
+        ctx.stub.getState.resolves(Buffer.from(JSON.stringify({ patientID: 'Patient1', doctors: ['Doctor1'], sharedWith: [] })));
+        const result = JSON.parse(await contract.AddDentalFileMetadata(
+            ctx, 'file-1', 'Patient1', 'filesystem:file-1', 'scan.dcm', 'application/dicom', '12', 'a'.repeat(64), 'Doctor1', '2026-07-12T00:00:00Z'
+        ));
+        expect(result.sha256).to.equal('a'.repeat(64));
+        expect(result).not.to.have.property('content');
+        expect(ctx.stub.putState.calledWith('RADFILE:file-1')).to.equal(true);
+    });
+
+    it('rejects radiographic metadata upload by an unauthorized doctor', async () => {
+        const ctx = context('doctor', 'Doctor2');
+        ctx.stub.getState.resolves(Buffer.from(JSON.stringify({ patientID: 'Patient1', doctors: ['Doctor1'], sharedWith: [] })));
+        await expectReject(contract.AddDentalFileMetadata(
+            ctx, 'file-2', 'Patient1', 'filesystem:file-2', 'scan.dcm', 'application/dicom', '12', 'b'.repeat(64), 'Doctor2', '2026-07-12T00:00:00Z'
+        ), 'Doctor Doctor2 is not assigned or consented for patient Patient1');
+    });
+
+    it('rejects an identity that is not associated with an MSP', async () => {
+        const ctx = context('admin', 'Admin1');
+        ctx.clientIdentity.getMSPID.returns('');
+        await expectReject(contract.DeletePatient(ctx, 'Patient1'), 'not associated with an MSP');
+    });
+
+    it('rejects a certificate from an untrusted MSP', async () => {
+        const ctx = context('admin', 'Admin1', 'UnknownMSP');
+        await expectReject(contract.DeletePatient(ctx, 'Patient1'), 'MSP UnknownMSP is not authorized');
     });
 });

@@ -1,26 +1,27 @@
 import { useEffect, useState } from 'react';
 import AppointmentTableRow from "./AppointmentTableRow";
+import { authHeaders, databaseUrl } from '../../config/api.js';
 
 const AppointmentsTable = () => {
     
     const [appointments, setAppointments] = useState([]);
+    const [error, setError] = useState('');
 
-    // Fetch data from the API when the component mounts
     useEffect(() => {
         const fetchAppointments = async () => {
             try {
-                const response = await fetch("http://localhost:8080/Appointment"); 
-                const data = await response.json();
-                setAppointments(data); 
+                const response = await fetch(databaseUrl('/appointments'), { headers: authHeaders() });
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload?.error?.message || 'Unable to load appointments');
+                setAppointments(payload.data || []);
             } catch (error) {
-                console.error("Error fetching appointments:", error);
+                setError(error.message);
             }
         };
 
         fetchAppointments();
     }, []); 
 
-    // Process the fetched appointments and render rows
     const appointmentRows = appointments.map((appointment, index) => {
         return (
             <AppointmentTableRow
@@ -35,8 +36,6 @@ const AppointmentsTable = () => {
     });
 
 
-    console.log(appointmentRows.length)
-
     return (
         <div id="AppointmentsTable" className="w-full">
             <h1 className="text-2xl font-bold mb-3">Scheduled meetings</h1>
@@ -48,8 +47,9 @@ const AppointmentsTable = () => {
                 <div>Date & Time</div>
                 <div>...</div>
             </div>
+            {error && <div role="alert" className="mb-3 rounded border border-red-300 bg-red-50 p-3 text-red-800">{error}</div>}
             <div className="flex flex-col">
-                {appointmentRows.length != 0 ? appointmentRows : <div className='w-full border rounded-xl p-3 text-center'>No upcomin events to view 🦷📅❌...</div>}
+                {!error && (appointmentRows.length !== 0 ? appointmentRows : <div className='w-full border rounded-xl p-3 text-center'>No upcoming appointments.</div>)}
             </div>
         </div>
     );

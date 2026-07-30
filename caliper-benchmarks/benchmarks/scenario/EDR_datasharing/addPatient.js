@@ -10,12 +10,13 @@ class AddPatientWorkload extends WorkloadModuleBase {
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         this.txIndex = 0;
+        this.prefix = roundArguments.prefix;
         this.sutAdapter = sutAdapter;
         this.sutContext = sutContext;
     }
 
     async submitTransaction() {
-        const patientId = 'TestPatient_' + this.txIndex;
+        const patientId = this.prefix + '_' + this.txIndex;
         const firstName = 'Test';
         const lastName = 'Patient';
         const dateOfBirth = '2000-01-01';
@@ -33,7 +34,7 @@ class AddPatientWorkload extends WorkloadModuleBase {
         return this.sutAdapter.sendRequests({
             contractId: 'basic',
             contractFunction: 'addPatient',
-            invokerIdentity: 'User1',
+            invokerIdentity: 'Admin2',
             contractArguments: [
                 patientId,
                 firstName,

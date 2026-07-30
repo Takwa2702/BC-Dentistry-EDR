@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Input from '../components/Input';
 import LoginSignUpBtn from '../components/LoginSignUpBtn';
 import LoginOption from '../components/LoginOption';
 import axios from 'axios';
+import { databaseUrl, jsonHeaders } from '../config/api.js';
 const Signup = () => {
 
     
@@ -11,6 +12,7 @@ const Signup = () => {
     const [lastname, setLastname] = useState('');
     const [username, setUsername] = useState('');
     const [contactNumber, setContactNumber] = useState('');
+    const [organizationId, setOrganizationId] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
@@ -18,6 +20,7 @@ const Signup = () => {
 
     const [isSignup, setIsSignup] = useState(false);
     const path = useLocation().pathname;
+    const navigate = useNavigate();
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -35,13 +38,15 @@ const Signup = () => {
             return;
         }
         try {
-            const response = await axios.post('http://localhost:8080/register', {
-                firstName: firstname, // Use camelCase as expected by the backend
-                lastName: lastname,   // Use camelCase as expected by the backend
-                username,             // username (email)
-                contactNumber,        // Include contactNumber
-                password,             // Include password
-                roleId: 2,            // Assuming roleId 2 is for admin users
+            const response = await axios.post(databaseUrl('/register'), {
+                firstName: firstname,
+                lastName: lastname,
+                username,
+                contactNumber,
+                organizationId,
+                password,
+            }, {
+                headers: jsonHeaders(),
             });
             setSuccess(response.data.message);
             setError('');
@@ -109,6 +114,16 @@ const Signup = () => {
                                 isRequired={true}
                                 Classes={'w-full'}
                                 onChange={(e) => setContactNumber(e.target.value)}
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700">Organization ID</label>
+                            <Input
+                                Id={"organizationId"}
+                                Type={'number'}
+                                isRequired={true}
+                                Classes={'w-full'}
+                                onChange={(e) => setOrganizationId(e.target.value)}
                             />
                         </div>
                         <div className="mb-4">

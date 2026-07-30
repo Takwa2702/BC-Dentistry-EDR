@@ -5,12 +5,12 @@
 const FabricCAServices = require('fabric-ca-client');
 const { Wallets } = require('fabric-network');
 const fs = require('fs');
-const path = require('path');
+const config = require('./config');
 
 async function main() {
     try {
         // Load the network configuration
-        const ccpPath = path.resolve(__dirname, 'connection', 'connection-org1.json');
+        const ccpPath = config.connectionProfilePath;
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
         // Create a new CA client for interacting with the CA
@@ -23,7 +23,8 @@ async function main() {
         );
 
         // Create a new file system based wallet for managing identities
-        const walletPath = path.join(process.cwd(), 'wallet');
+        const walletPath = config.walletPath;
+        fs.mkdirSync(walletPath, { recursive: true });
         const wallet = await Wallets.newFileSystemWallet(walletPath);
         console.log(`Wallet path: ${walletPath}`);
 

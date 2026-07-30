@@ -1,18 +1,12 @@
 import Appointments from "../Sections/Dashboard/Appointments";
 import { MainContainer } from "../components";
-import SimpleBarChart from "../Sections/Dashboard/Chart"
-import Calendar from "../components/Dashboard/Calendar";
-import Updates from "../Sections/Dashboard/Updates";
-import Requests from "../Sections/Dashboard/Requests";
+import AppointmentsTable from "../components/Dashboard/AppointmentsTable.jsx";
 
 const Home = () => {
     return (
         <MainContainer Id={"Appointments"} classes={'gap-y-10'}>
             <Appointments />
-            <SimpleBarChart />
-            <Calendar />
-            <Updates />
-            <Requests />
+            <div className="col-span-8 rounded-xl border bg-white p-5"><AppointmentsTable /></div>
         </MainContainer>
     )
 }

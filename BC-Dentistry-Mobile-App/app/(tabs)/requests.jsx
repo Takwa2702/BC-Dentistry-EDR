@@ -4,15 +4,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 import { RequestsHeader, DataRequest, NoRequests } from '../../components';
-
-const API_BASE_URL = 'http://openuae.fortiddns.com:28081'; 
+import { authHeaders, blockchainUrl, getPatientBlockchainID } from '../../utils/api';
 
 import { useUser } from '../../Context/UserContext';
 
 
 const Requests = () => {
 
-    const { user } = useUser()
+    const { user, token } = useUser()
+    const patientID = getPatientBlockchainID(user);
 
 
     // useEffect(() => {
@@ -30,12 +30,21 @@ const Requests = () => {
 
     useEffect(() => {
         const fetchRequests = async () => {
+            if (!token || !patientID) {
+                console.warn("Missing authenticated patient identity. Cannot fetch requests.");
+                setLoading(false);
+                return;
+            }
+
             try {
-                const response = await axios.get(`${API_BASE_URL}/getAllRequestsForPatient/Patient1`);
+                const response = await axios.get(blockchainUrl(`/getAllRequestsForPatient/${patientID}`), {
+                    headers: authHeaders(token),
+                });
                 // console.log("Fetched Requests:", response.data);
                 
-                if (response.data.length > 0) {
-                    setRequests(response.data.filter((request) => request.status == 'PENDING_PATIENT_CONSENT'));
+                const payload = response.data?.data || response.data || [];
+                if (payload.length > 0) {
+                    setRequests(payload.filter((request) => request.status == 'PENDING_PATIENT_CONSENT'));
                 } else {
                     console.warn("No pending requests found.");
                 }
@@ -47,7 +56,7 @@ const Requests = () => {
         };
 
         fetchRequests();
-    }, []);
+    }, [token, patientID]);
 
     return (
         <View>
@@ -72,6 +81,8 @@ const Requests = () => {
                     /> */}
                     {loading ? (
                         <Text>Loading requests...</Text>
+                    ) : !token || !patientID ? (
+                        <NoRequests text={"Patient blockchain identity is not linked to this account yet."} />
                     ) : requests.length === 0 ? (
                         <NoRequests text={"All done, you don't have any pending requests!"} />
                     ) : (
@@ -83,9 +94,9 @@ const Requests = () => {
                                 to={request.patientID}
                                 status={request.status}
                                 id={request.requestID}
-                                about={request.about || "N/A"}
-                                date={request.date || "N/A"}
-                                time={request.time || "N/A"}
+                                about={request.purpose || request.reason || request.dataType || "N/A"}
+                                date={request.requestedAt ? request.requestedAt.slice(0, 10) : "N/A"}
+                                time={request.requestedAt ? request.requestedAt.slice(11, 16) : "N/A"}
                             />
                         ))
                     )}

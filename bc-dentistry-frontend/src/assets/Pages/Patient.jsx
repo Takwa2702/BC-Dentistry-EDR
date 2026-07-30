@@ -36,7 +36,7 @@
 // export default Patient;
 
 // import Data from "../../../data";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { MainContainer } from "../components";
 import PatientMainBar from "../components/Patient/PatientMainBar";
 import PatientPersonalInfo from "../components/Patient/PatientPersonalInfo";
@@ -45,32 +45,35 @@ import DentalRecord from "../components/Patient/DentalRecord";
 import { useRole } from '../Context/RoleContext.jsx';
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { authHeaders, databaseUrl } from "../config/api.js";
+import { getStoredUser } from "../utils/auth.js";
+import RadiographicFiles from "../components/Patient/RadiographicFiles.jsx";
+import ClinicalRecords from "../components/Patient/ClinicalRecords.jsx";
 
-const Patient = () => {
-    const path = useLocation().pathname;
+const Patient = ({ patientID: patientIDOverride }) => {
+    const { id: routePatientID } = useParams();
     const { userRole } = useRole();
-    const user = JSON.parse(localStorage.getItem("user")); // Retrieve user details
+    const user = getStoredUser(); // Retrieve user details
 
     // const patientDetails = Data.filter((patient) => {
     //     return patient.id == path.split('/').pop();
     // })
-    const patientId = path.split('/').pop(); // Extract patient ID from URL
-    console.log('Fetched Patient id:', patientId);
+    const patientId = patientIDOverride || routePatientID;
 
     const [patientDetails, setPatientDetails] = useState(null); // State to hold the patient data
     const [loading, setLoading] = useState(true); // Loading state
+    const [error, setError] = useState('');
 
     // Fetch patient details when the component mounts
     useEffect(() => {
         const fetchPatientDetails = async () => {
             try {
-                const response = await axios.get(`http://localhost:8081/ReadPatient/${patientId}`);
-                console.error('Fetched patients:', response.data);
-                setPatientDetails(response.data); // Store the fetched patient data
+                const response = await axios.get(databaseUrl(`/patients/${encodeURIComponent(patientId)}`), { headers: authHeaders() });
+                setPatientDetails(response.data.data);
                 
                 setLoading(false);
             } catch (error) {
-                console.error('Error fetching patient details:', error);
+                setError(error.response?.data?.error?.message || 'Unable to load patient details.');
                 setLoading(false);
             }
         };
@@ -83,39 +86,43 @@ const Patient = () => {
     }
 
     if (!patientDetails) {
-        return <div>Patient not found</div>;
+        return <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-800">{error || 'Patient not found.'}</div>;
     }
 
-    // Check if the patient has shared data with Doctor1
-    const isSharedWithDoctor1 = patientDetails.sharedWith.includes(user.blockchainID);
-    console.log('Result of checking deoctor shared with details:', isSharedWithDoctor1);
+    if (!user) {
+        return <div>Please log in to view patient details.</div>;
+    }
+
+    const canViewClinicalRecords = userRole === 'doctor';
     
     return (
         <MainContainer classes={'w-full my-6'}>
             <div className="col-span-12 flex flex-col gap-y-4">
                 <PatientMainBar id={patientDetails.patientID}  fullName={`${patientDetails.firstName} ${patientDetails.lastName}`} gender={patientDetails.gender} dob={patientDetails.dateOfBirth} />
                 <PatientPersonalInfo patientDetail={patientDetails}/>
+                <RadiographicFiles patientID={patientDetails.patientID || patientId} canUpload={userRole === 'doctor'} />
+                <ClinicalRecords patientID={patientDetails.patientID || patientId} role={userRole} />
                 
                  {/* Show medical records only for doctors */}
-                 {userRole === 'doctor' && isSharedWithDoctor1 ? (
+                 {canViewClinicalRecords ? (
                     patientDetails.medicalRecords?.length > 0 ? (
                         <MedicalRecord medicalDetails={patientDetails.medicalRecords} />
                     ) : (
                         <p>No medical records available.</p>
                     )
                 ) : (
-                    userRole === 'doctor' && <p>No medical records available or not shared with Doctor.</p>
+                    userRole === 'doctor' && <p>Medical records are unavailable for this patient.</p>
                 )}
 
                 {/* Show dental records only for doctors */}
-                {userRole === 'doctor' && isSharedWithDoctor1 ? (
+                {canViewClinicalRecords ? (
                     patientDetails.dentalChart?.length > 0 ? (
                         <DentalRecord dentalDetails={patientDetails.dentalChart} />
                     ) : (
                         <p>No dental records available.</p>
                     )
                 ) : (
-                    userRole === 'doctor' && <p>No dental records available or not shared with Doctor.</p>
+                    userRole === 'doctor' && <p>Dental records are unavailable for this patient.</p>
                 )}
                 {/* <DentalRecord dentalDetails={patientDetails[0]['dental-details']} />
                 {userRole === 'doctor' && (

@@ -99,8 +99,8 @@ BC-Dentistry-EDR/
 
 | Service | Port |
 |---------|------|
-| Blockchain API | 3000 |
-| Database API | 3001 |
+| Blockchain API | 8081 |
+| Database API | 8080 |
 | MySQL | 3306 |
 | Web frontend (Vite dev) | 5174 |
 | Fabric orderer | 7050 |
@@ -197,6 +197,8 @@ reset the database, remove the volume: `docker compose down -v`.
 
 ## 6. Full System Startup — Step by Step (manual)
 
+> For the Phase 11 Compose topology, Fabric exception, persistence, health checks, and AWS handoff procedure, see [PHASE11_DEPLOYMENT.md](PHASE11_DEPLOYMENT.md). All non-Fabric server services run through the root Compose file; the Fabric test network and mobile client remain explicitly outside that application stack.
+
 > Open a separate terminal for each step.
 
 ### Step 0 — Restart exited containers (when resuming)
@@ -265,7 +267,7 @@ peer chaincode query -C mychannel -n basic -c '{"Args":["getAllPatients"]}'
 cd dental-backend
 
 # Clear stale identities and profile
-rm -f connection/connection-org1.json wallet/admin.id wallet/appUser.id
+rm -f connection/connection-org1.json wallet/*.id
 
 # Copy the freshly generated connection profile from the running network.
 # Adjust the path prefix to wherever fabric-samples lives on your machine.
@@ -274,12 +276,12 @@ cp ../fabric-samples/test-network/organizations/peerOrganizations/org1.example.c
 
 # Enroll admin + register app user into the local wallet
 node enrollAdmin.js
-node registerUser.js
+npm run fabric:register-identities
 
 # First run only
 npm install
 
-# Start the API (http://localhost:3000)
+# Start the API (http://localhost:8081)
 node index.js
 ```
 
@@ -291,7 +293,7 @@ docker compose up -d mysql      # if using compose
 
 cd backend
 npm install        # first run only
-node server.js     # http://localhost:3001
+node server.js     # http://localhost:8080
 ```
 
 ### Step 7 — Web app (Terminal 4)
@@ -429,5 +431,5 @@ npx expo start --clear
 **`ENDORSEMENT_POLICY_FAILURE` on invoke** — include both org peer addresses
 (`localhost:7051` and `localhost:9051`) with their TLS root certs (see Step 4).
 
-**CORS error in browser** — set `CORS_ORIGIN=http://localhost:5174` in
+**CORS error in browser** — set `CORS_ORIGIN=http://localhost:5173,http://localhost:5174` in
 `dental-backend/.env` and restart the API.

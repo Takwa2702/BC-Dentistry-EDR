@@ -7,25 +7,20 @@ caliper:
 channels:
   # channelName of mychannel matches the name of the channel created by test network
   - channelName: mychannel
-    # the chaincodeIDs of all the fabric chaincodes in caliper-benchmarks
     contracts:
-    - id: basic
-    - id: fabcar
-    - id: fixed-asset
-    - id: marbles
-    - id: simple
-    - id: smallbank
+      - id: basic
 
 organizations:
   - mspid: Org1MSP
-    # Identities come from cryptogen created material for test-network
+    # Run ../../update-test-network-config.sh after network.sh up to replace
+    # GENERATED_PRIVATE_KEY with the current User1 private key path.
     identities:
       certificates:
-      - name: 'User1'
-        clientPrivateKey:
-          path: '/home/openuae/BC_Dentistry_temp/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/a2e0fe41221403a955060639391a300832101d9a7d035edd43c0dcbe024dd02f_sk'
-        clientSignedCert:
-          path: '/home/openuae/BC_Dentistry_temp/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem'
+        - name: 'User1'
+          clientPrivateKey:
+            path: '../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/GENERATED_PRIVATE_KEY'
+          clientSignedCert:
+            path: '../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem'
     connectionProfile:
-      path: '/home/openuae/BC_Dentistry_temp/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.yaml'
+      path: '../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.yaml'
       discover: true

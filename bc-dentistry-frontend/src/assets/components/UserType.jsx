@@ -16,16 +16,21 @@
 // export default UserType;
 
 import { useEffect, useState } from 'react';
+import { getStoredUser } from '../utils/auth.js';
 
 const UserType = () => {
     const [userData, setUserData] = useState(null);
 
     useEffect(() => {
-        const storedUser = JSON.parse(localStorage.getItem('user'));
+        const storedUser = getStoredUser();
         if (storedUser) {
             setUserData(storedUser);
         }
     }, []);
+
+    if (!userData) {
+        return null;
+    }
 
     const rolePrefix = userData?.role === "Doctor" ? "Dr." : "A.";
 

@@ -14,18 +14,24 @@ const Navbar = () => {
     const location = useLocation();
     const [currentPath, setCurrentPath] = useState(location.pathname.split("/").pop());
     const { userRole } = useRole();
-    console.log("Current role:", userRole);
 
     useEffect(() => {
         setCurrentPath(location.pathname.split("/").pop());
     }, [location]);
 
-    const navList = [
+    const normalizedRole = userRole?.toLowerCase();
+    const navList = normalizedRole === 'system' ? [
+        { title: "Clinics", link:'Clinics', icon: Icon1 },
+    ] : normalizedRole === 'patient' ? [
+        { title: "My Record", link:'My-Record', icon: Icon3 },
+        { title: "Appointments", link:'Appointments', icon: Icon2 },
+    ] : [
         { title: "Dashboard", link:'Dashboard', icon: Icon1 },
         { title: "Appointments", link:'Appointments', icon: Icon2 },
         { title: "Patients", link:'Patients', icon: Icon3 },
+        ...(normalizedRole === 'admin' ? [{ title: "Doctors", link:'Doctors', icon: Icon3 }] : []),
         { title: "Lab Results", link:'LabResults', icon: Icon4 },
-        ...(userRole?.toLowerCase() !== 'doctor' ? [{ title: "Data Requests", link:'DataRequests', icon: Icon5 }] : []),
+        ...(normalizedRole === 'admin' ? [{ title: "Data Requests", link:'DataRequests', icon: Icon5 }] : []),
     ];
 
     const renderNavLinks = () =>
@@ -39,18 +45,18 @@ const Navbar = () => {
         });
 
     return (
-        <div id="Navbar" className="bg-[#000814] w-[14%] h-[95vh] px-10 py-10 rounded-xl fixed">
-            <NavLogo />
-            <div id="Navlinks" className="text-white text-lg flex flex-col gap-y-12 mt-16">
-                <div className="main flex flex-col gap-y-6 items-center">
+        <nav id="Navbar" aria-label="Primary navigation" className="fixed inset-x-3 top-3 z-40 overflow-hidden rounded-xl bg-[#000814] px-3 py-2 lg:inset-x-auto lg:h-[95vh] lg:w-[14%] lg:px-6 lg:py-10">
+            <div className="hidden lg:block"><NavLogo /></div>
+            <div id="Navlinks" className="flex overflow-x-auto text-white lg:mt-16 lg:flex-col lg:gap-y-12 lg:overflow-visible">
+                <div className="main flex min-w-max items-center gap-2 lg:min-w-0 lg:flex-col lg:gap-y-6">
                     {renderNavLinks()}
                 </div>
-                <div className="personal flex flex-col gap-y-6 items-center">
-                    <NavLink icon={Icon6} title={"setting"} link={"setting"} />
-                    <NavLink icon={Icon7} title={"info"} link={"info"} />
+                <div className="personal ml-auto flex min-w-max items-center gap-2 lg:ml-0 lg:flex-col lg:gap-y-6">
+                    {['admin','doctor'].includes(normalizedRole) && <Link className="w-full" to="/settings"><NavLink icon={Icon6} title={"Settings"} link={"settings"} /></Link>}
+                    {['admin','doctor'].includes(normalizedRole) && <Link className="w-full" to="/info"><NavLink icon={Icon7} title={"Info"} link={"info"} /></Link>}
                 </div>
             </div>
-        </div>
+        </nav>
     );
 };
 

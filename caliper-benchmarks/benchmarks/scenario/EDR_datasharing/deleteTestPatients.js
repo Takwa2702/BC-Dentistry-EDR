@@ -10,19 +10,20 @@ class DeletePatientWorkload extends WorkloadModuleBase {
 
     async initializeWorkloadModule(workerIndex, totalWorkers, roundIndex, roundArguments, sutAdapter, sutContext) {
         this.txIndex = 0;
+        this.prefix = roundArguments.prefix;
         this.sutAdapter = sutAdapter;
         this.sutContext = sutContext;
     }
 
     async submitTransaction() {
-        const patientId = 'TestPatient_' + this.txIndex;
+        const patientId = this.prefix + '_' + this.txIndex;
 
         this.txIndex++;
 
         return this.sutAdapter.sendRequests({
             contractId: 'basic',
             contractFunction: 'DeletePatient',
-            invokerIdentity: 'User1',
+            invokerIdentity: 'Admin2',
             contractArguments: [patientId],
             readOnly: false
         });

@@ -37,7 +37,6 @@ const SetNewAppointmentForm2 = ({ Id, classes, resetForm }) => {
 
   const confirmAppointment = () => {
     if (selectedTimeSlot !== null) {
-    //   alert(`Appointment confirmed for Doctor ${selectedDoctor + 1} at ${selectedTimeSlot}`);
       resetForm(); // Reset form after confirmation
     }
   };

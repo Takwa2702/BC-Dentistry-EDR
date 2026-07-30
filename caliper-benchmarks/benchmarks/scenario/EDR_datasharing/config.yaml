@@ -16,6 +16,7 @@ test:
           tps: 1
       workload:
         module: benchmarks/scenario/EDR_datasharing/addPatient.js
+        arguments: { prefix: "Caliper1" }
 
     - label: delete-1
       description: Delete 1 patient
@@ -26,6 +27,7 @@ test:
           tps: 1
       workload:
         module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+        arguments: { prefix: "Caliper1" }
 
     # WRITE + DELETE: Add 10, then delete 10
     - label: write-10
@@ -37,6 +39,7 @@ test:
           tps: 5
       workload:
         module: benchmarks/scenario/EDR_datasharing/addPatient.js
+        arguments: { prefix: "Caliper10" }
 
     - label: delete-10
       description: Delete 10 patients
@@ -47,6 +50,7 @@ test:
           tps: 5
       workload:
         module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+        arguments: { prefix: "Caliper10" }
 
     # WRITE + DELETE: Add 50, then delete 50
     - label: write-50
@@ -58,6 +62,7 @@ test:
           tps: 10
       workload:
         module: benchmarks/scenario/EDR_datasharing/addPatient.js
+        arguments: { prefix: "Caliper50" }
 
     - label: delete-50
       description: Delete 50 patients
@@ -68,6 +73,7 @@ test:
           tps: 10
       workload:
         module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+        arguments: { prefix: "Caliper50" }
 
     # WRITE + DELETE: Add 100, then delete 100
     - label: write-100
@@ -79,6 +85,7 @@ test:
           tps: 20
       workload:
         module: benchmarks/scenario/EDR_datasharing/addPatient.js
+        arguments: { prefix: "Caliper100" }
 
     - label: delete-100
       description: Delete 100 patients
@@ -89,6 +96,7 @@ test:
           tps: 20
       workload:
         module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+        arguments: { prefix: "Caliper100" }
 
     # WRITE + DELETE: Add 200, then delete 200
     - label: write-200
@@ -100,6 +108,7 @@ test:
           tps: 40
       workload:
         module: benchmarks/scenario/EDR_datasharing/addPatient.js
+        arguments: { prefix: "Caliper200" }
 
     - label: delete-200
       description: Delete 200 patients
@@ -110,6 +119,7 @@ test:
           tps: 40
       workload:
         module: benchmarks/scenario/EDR_datasharing/deleteTestPatients.js
+        arguments: { prefix: "Caliper200" }
 
     # READ ONLY ROUNDS
     - label: read-1

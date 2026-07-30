@@ -1,42 +1,31 @@
-import Data from "../../../../data"
+import { useEffect, useState } from "react";
 import { Appointment } from "../../components";
-import Alarm1 from "../../images/icons/alarm1.svg"
-import Alarm2 from "../../images/icons/alarm2.svg"
-import Alarm3 from "../../images/icons/alarm3.svg"
-import Visitors from "../../images/icons/visitors.svg"
+import Alarm1 from "../../images/icons/alarm1.svg";
+import Alarm2 from "../../images/icons/alarm2.svg";
+import { authHeaders, databaseUrl } from "../../config/api.js";
 
 const Appointments = () => {
-    let appointmentsStatus = {
-        'D': 0,
-        'Co': 0,
-        'P': 0,
-        'Ca': 0,
-    }
+    const [appointments, setAppointments] = useState([]);
 
-    Data.forEach((p)=>{
-        p.appointments.forEach((appointment) => {
-            switch (appointment.status){
-                case "confirmed": appointmentsStatus["Co"]++; console.log(appointment); break;
-                case "done": appointmentsStatus["D"]++; console.log(appointment); break;
-                case "canceled": appointmentsStatus["Ca"]++; console.log(appointment); break;
-                case "pending": appointmentsStatus["P"]++; console.log(appointment); break;
-            }
-        })
-    })
+    useEffect(() => {
+        let active = true;
+        fetch(databaseUrl('/appointments'), { headers: authHeaders() })
+            .then((response) => response.ok ? response.json() : Promise.reject())
+            .then((payload) => { if (active) setAppointments(payload.data || []); })
+            .catch(() => { if (active) setAppointments([]); });
+        return () => { active = false; };
+    }, []);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcoming = appointments.filter((item) => !item.Date || new Date(item.Date) >= today).length;
 
     return (
-        <div id="AppointmentsSection" className="grid grid-cols-2 gap-x-4 gap-y-4 justify-start col-span-4">
-            <Appointment header={appointmentsStatus['D']+appointmentsStatus['Co']+appointmentsStatus['P']+appointmentsStatus['Ca']} subheader={"All appointments"} icon={Alarm1}/>
-            <Appointment header={appointmentsStatus['P']} subheader={"Pending appointments"} icon={Alarm2}/>
-            <Appointment header={appointmentsStatus['Ca']} subheader={"Canceled appointments"} icon={Alarm3}/>
-            <Appointment header={appointmentsStatus['Co']} subheader={"Finished appointments"} icon={Visitors}/>
-            <Appointment header={appointmentsStatus['D']+appointmentsStatus['Co']+appointmentsStatus['P']+appointmentsStatus['Ca']} subheader={"Total visitors"} icon={Alarm1}/>
-            <Appointment header={"XX"} subheader={"All appointments"} icon={Alarm1}/>
-            <Appointment header={"XX"} subheader={"All appointments"} icon={Alarm1}/>
-            <Appointment header={"XX"} subheader={"All appointments"} icon={Alarm1}/>
+        <div id="AppointmentsSection" className="grid grid-cols-2 gap-4 justify-start col-span-4">
+            <Appointment header={appointments.length} subheader="Scoped appointments" icon={Alarm1}/>
+            <Appointment header={upcoming} subheader="Upcoming appointments" icon={Alarm2}/>
         </div>
-    )
-}
-
+    );
+};
 
 export default Appointments;

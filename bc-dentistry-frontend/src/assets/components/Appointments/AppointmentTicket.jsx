@@ -1,67 +1,23 @@
-import { useRef } from "react";
+import { useState } from 'react';
+import ActionDialog from '../ActionDialog.jsx';
 
-const AppointmentTicket = ({date, time, reason, dr, id, name, status}) => {
-
-    const expandBtn = useRef('expand-options-button');
-
-    const showOptions = (e) => {
-        console.log(e.target.nextSibling)
-        e.target.nextSibling.classList.replace('h-0','h-[8.5em]')
-        // e.target.nextSibling.classList.replace('opacity-0','opacity-100')
-        setTimeout(() =>{
-            e.target.nextSibling.classList.replace('-z-10','z-10')
-
-        }, 100)
-    }
-
-    window.addEventListener('click', (e) => {
-        if(![...e.target.classList].includes('appointmentsOptions') ){
-            if(![...e.target.classList].includes('expand-options-button')){
-                document.querySelectorAll('.appointmentsOptions').forEach((a) => {
-                    a.classList.replace('h-[8.5em]','h-0')
-                    // a.classList.replace('opacity-100','opacity-0')
-                    setTimeout(() =>{
-                        a.classList.replace('z-10','-z-10')
-
-                    }, 200)
-                })
-            }
-
-        }
-    })
-
-
-
-    return (
-        <div className="appointment-ticket col-span-5 xl:col-span-4 2xl:col-span-3 bg-white p-5 flex flex-col gap-y-3 rounded-xl border">
-            <div className="for">
-                <div className="date-time bg-blue-900 flex items-center justify-between w-full px-3 py-2 text-white rounded-md mb-2">
-                    <div className="date">{date}</div>
-                    <div className="time">{time}</div>
-                </div>
-                <div className="reason text-2xl font-bold">{reason}</div>
-                <div className="type-dr text-lg font-semibold">Dr. {dr}</div>
-            </div>
-            <div className="line border-b border-b-2"></div>
-            <div className="details">
-                <div className="id text-gray-300">ID: {id}</div>
-                <div className="patient-name text-2xl font-bold h-16">{name}</div>
-                <div className="status font-semibold">{status}</div>
-                <div className="options relative">
-                    <div className=" py-1 text-center border border-blue-800 mt-4 rounded-md font-semibold text-lg">
-                        <button ref={expandBtn} onClick={showOptions} className="expand-options-button z-[9999]">More Options</button>
-                        <ul className="appointmentsOptions absolute border-blue-800 border-2 border-l-2 bg-white flex flex-col w-full top-10 left-0 rounded-md h-0 overflow-hidden -z-10 drop-shadow-xl">
-                            <li className="py-1 border-b-2 cursor-pointer">Mark as Done</li>
-                            <li className="py-1 border-b-2 cursor-pointer">Postpone Appointment</li>
-                            <li className="py-1 border-b-2 cursor-pointer">Cancel Appointment</li>
-                            <li className="py-1 border-b-2 cursor-pointer">Cancel Appointment</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-
+const AppointmentTicket = ({ date, reason, dr, id, name, specialty, status, canManage = false, onUpdate, onCancel }) => {
+  const [dialog, setDialog] = useState('');
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const execute = async () => {
+    if (!value) return setError(dialog === 'update' ? 'Choose a new appointment date and time.' : 'Enter a cancellation reason.');
+    setBusy(true); setError('');
+    try { if (dialog === 'update') await onUpdate?.({ appointmentDateTime: value }); else await onCancel?.(value); setDialog(''); }
+    catch (requestError) { setError(requestError.message); }
+    finally { setBusy(false); }
+  };
+  const formattedDate = date ? new Date(date).toLocaleString() : 'Date not set';
+  return <article className="appointment-ticket col-span-5 xl:col-span-4 2xl:col-span-3 bg-white p-5 flex flex-col gap-y-3 rounded-xl border">
+    <div className="date-time bg-blue-900 px-3 py-2 text-white rounded-md">{formattedDate}</div><h3 className="text-2xl font-bold">{reason}</h3><p className="font-semibold">{specialty} · Dr. {dr}</p><p>Patient: {name}</p><p>ID: {id}</p><p className="capitalize">Status: {status}</p>
+    {canManage && status !== 'cancelled' && <div className="flex gap-2"><button type="button" onClick={() => { setValue(String(date || '').slice(0,16)); setError(''); setDialog('update'); }} className="border border-blue-800 px-3 py-2 rounded">Update</button><button type="button" onClick={() => { setValue(''); setError(''); setDialog('cancel'); }} className="border border-red-700 text-red-700 px-3 py-2 rounded">Cancel</button></div>}
+    {dialog && <ActionDialog title={dialog === 'update' ? 'Update appointment' : 'Cancel appointment'} description={dialog === 'update' ? 'Choose the new scheduled date and time.' : 'Provide a reason for the patient record.'} confirmLabel={dialog === 'update' ? 'Save appointment' : 'Cancel appointment'} danger={dialog === 'cancel'} busy={busy} error={error} onClose={() => setDialog('')} onConfirm={execute}><label className="text-sm font-semibold">{dialog === 'update' ? 'Date and time' : 'Cancellation reason'}{dialog === 'update' ? <input type="datetime-local" value={value} onChange={(event) => setValue(event.target.value)} className="mt-2 block w-full rounded-md border p-3" /> : <textarea value={value} onChange={(event) => setValue(event.target.value)} className="mt-2 block min-h-28 w-full rounded-md border p-3" />}</label></ActionDialog>}
+  </article>;
+};
 export default AppointmentTicket;
