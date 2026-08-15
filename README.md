@@ -7,21 +7,21 @@ This repository contains a consent-based electronic dental record platform built
 - `backend/` — application and database API
 - `dental-backend/` — private Hyperledger Fabric adapter
 - `bc-dentistry-frontend/` — React web application
-- `BC-Dentistry-Mobile-App/` — Expo mobile application
+- `BC-Dentistry-Mobile-App/` — Expo mobile application source
 - `fabric-samples/dental-record-sharing/` — EDR chaincode
 - `database/` — database schema and migrations
 - `scripts/` — database migration helpers
 - `docker-compose.yml` — containerized application services
 
-The web and mobile clients communicate with the application API. The blockchain adapter is an internal service and should not be exposed as a public client API.
+The web client communicates with the application API. The blockchain adapter is an internal service and should not be exposed as a public client API. The mobile application is distributed separately and is not a long-running Compose service.
 
 ## Prerequisites
 
 - Docker Engine with Docker Compose
-- Node.js 18 or newer and npm
 - Hyperledger Fabric 2.5-compatible network and Fabric CA
-- MySQL 8 when running outside Docker Compose
-- Expo tooling for mobile development
+- Expo tooling only when building the mobile application
+
+Node.js, npm, MySQL, and the web/API runtimes are provided by the application containers and do not need to be installed on the Compose host.
 
 ## Configuration
 
@@ -40,9 +40,9 @@ dental-backend/connection/
 dental-backend/wallet/
 ```
 
-## Container startup
+## Application startup
 
-After configuring `.env` and providing the Fabric runtime assets:
+The application is built and operated through Docker Compose. After configuring `.env` and providing the Fabric runtime assets:
 
 ```bash
 docker compose config
@@ -50,7 +50,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-The application stack contains:
+The Compose stack contains:
 
 - `mysql`
 - `blockchain-api`
@@ -59,48 +59,31 @@ The application stack contains:
 
 The Fabric network is managed separately and must be available before blockchain operations are used.
 
-## Local development
-
-Install dependencies in each component before running it:
+## Common operations
 
 ```bash
-cd backend
-npm ci
-npm test
+# View application status
+docker compose ps
 
-cd ../dental-backend
-npm ci
-npm test
+# Follow service logs
+docker compose logs -f database-api blockchain-api web-frontend
 
-cd ../bc-dentistry-frontend
-npm ci
-npm test
-npm run build
+# Rebuild and recreate the application services
+docker compose up -d --build database-api blockchain-api web-frontend
 
-cd ../BC-Dentistry-Mobile-App
-npm ci
-npm test -- --runInBand
+# Stop the application containers
+docker compose down
 ```
 
-Common development commands:
-
-```bash
-# Application API
-cd backend && npm start
-
-# Blockchain adapter
-cd dental-backend && npm start
-
-# Web application
-cd bc-dentistry-frontend && npm run dev
-
-# Mobile application
-cd BC-Dentistry-Mobile-App && npm start
-```
+Do not use `docker compose down -v` in an environment whose MySQL volume must be preserved.
 
 ## Database migrations
 
-Apply the SQL migrations in `database/migrations/` in chronological order. The scripts under `scripts/` provide deployment-oriented migration helpers. Back up the database before applying migrations in an existing environment.
+Apply the SQL migrations in `database/migrations/` in chronological order as part of the deployment process. The scripts under `scripts/` provide migration helpers for the containerized environment. Back up the database before applying migrations to an existing deployment.
+
+## Mobile application
+
+The Expo mobile source is located in `BC-Dentistry-Mobile-App/`. It is built as an Android or iOS client and connects to the deployed application API; it is intentionally excluded from the long-running Docker Compose services.
 
 ## Security notes
 
