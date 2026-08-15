@@ -2,7 +2,6 @@ import Box from "../../components/Box"
 import PatientCard from "../../components/Patients/PatientCard";
 // import Data from '../../../../data'
 import NewPatientDialog from "../../components/Patients/NewPatientDialog";
-import RequestPatientCard from "../../components/Patients/RequestPatientCard";
 
 const PatientsCards = ({ patients, role, isAddPatientOpen, onCloseAddPatient, onChanged }) => {
     // Current date for age calculation
@@ -74,7 +73,6 @@ const PatientsCards = ({ patients, role, isAddPatientOpen, onCloseAddPatient, on
     return (
         <div id="PatientsCards" className="rounded-md">
             <div className='grid grid-cols-3 2xl:grid-cols-4 gap-3 p-0'>
-                {role === 'doctor' && <RequestPatientCard />}
                 {patientsCards.length > 0 ? patientsCards : <p>No patients found.</p>}
             </div>
 

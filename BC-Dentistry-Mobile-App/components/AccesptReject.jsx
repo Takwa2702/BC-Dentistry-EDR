@@ -1,72 +1,79 @@
+import { View, Alert } from 'react-native';
 import React, { useState } from 'react';
-import { Alert, View } from 'react-native';
-import axios from 'axios';
-import { CustomButton } from './index';
-import { authHeaders, blockchainUrl } from '../utils/api';
-import { useUser } from '../Context/UserContext';
+import CustomButton from './CustomButton';
+import apiClient, { databaseUrl } from '../services/apiClient';
 
-const AccesptReject = ({ requestID, patientID, updateStatus, setCardStatus, setrequestLoadingFunc, expandCardFunc }) => {
+const AccesptReject = ({ requestID, patientID, updateStatus, setCardStatus, setrequestLoadingFunc }) => {
     const [loading, setLoading] = useState(false);
-    const { token } = useUser();
-
-    const completeAction = () => {
-        setrequestLoadingFunc(false);
-        expandCardFunc();
-        setLoading(false);
-        setCardStatus(false);
-    };
-
     const handleAccept = async () => {
-        if (!token) {
-            Alert.alert('Login required', 'Please sign in again before approving requests.');
-            return;
-        }
-
         setLoading(true);
-        setrequestLoadingFunc(true);
+        if (setrequestLoadingFunc) setrequestLoadingFunc(true);
+
         try {
-            await axios.post(blockchainUrl('/grantConsent'), { patientID, requestID }, { headers: authHeaders(token) });
-            Alert.alert('Success', 'Request accepted successfully!');
-            updateStatus('CONSENT_GRANTED');
+            const endpoint = databaseUrl('/grantConsent');
+            const response = await apiClient.post(endpoint, {
+                patientID,
+                requestID,
+            });
+
+            Alert.alert("Consent Granted", "Request accepted successfully!");
+            if (updateStatus) updateStatus(response.data?.data?.status || "ACTIVE");
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error?.message || 'Failed to accept request.');
+            console.error("Error Accepting Request:", error.response?.data || error.message);
+            Alert.alert("Action Failed", error.response?.data?.error?.message || error.response?.data?.message || error.message || "Could not accept request.");
         } finally {
-            completeAction();
+            if (setrequestLoadingFunc) setrequestLoadingFunc(false);
+            setLoading(false);
+            if (setCardStatus) setCardStatus(false);
         }
     };
 
-    const handleReject = async () => {
-        if (!token) {
-            Alert.alert('Login required', 'Please sign in again before rejecting requests.');
-            return;
-        }
-
+    const submitRejection = async (reason) => {
         setLoading(true);
-        setrequestLoadingFunc(true);
+        if (setrequestLoadingFunc) setrequestLoadingFunc(true);
+
         try {
-            await axios.post(
-                blockchainUrl('/patient/rejectRequest'),
-                { patientID, requestID, rejectionReason: 'Not authorized' },
-                { headers: authHeaders(token) }
-            );
-            Alert.alert('Success', 'Request rejected successfully!');
-            updateStatus('REJECTED');
+            const endpoint = databaseUrl('/patient/rejectRequest');
+            await apiClient.post(endpoint, {
+                patientID,
+                requestID,
+                rejectionReason: reason,
+            });
+
+            Alert.alert("Request Rejected", "Request rejected successfully.");
+            if (updateStatus) updateStatus("REJECTED");
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.error?.message || 'Failed to reject request.');
+            console.error("Error Rejecting Request:", error.response?.data || error.message);
+            Alert.alert("Action Failed", error.response?.data?.error?.message || error.response?.data?.message || error.message || "Could not reject request.");
         } finally {
-            completeAction();
+            if (setrequestLoadingFunc) setrequestLoadingFunc(false);
+            setLoading(false);
+            if (setCardStatus) setCardStatus(false);
         }
+    };
+
+    const handleRejectPrompt = () => {
+        Alert.alert(
+            "Reject Access Request",
+            "Please select a reason for rejecting this record access request:",
+            [
+                { text: "Privacy Preference", onPress: () => submitRejection("Privacy preference") },
+                { text: "Not Authorized", onPress: () => submitRejection("Not authorized") },
+                { text: "Second Opinion Needed", onPress: () => submitRejection("Second opinion needed") },
+                { text: "Cancel", style: "cancel" },
+            ]
+        );
     };
 
     return (
         <View className="flex flex-row gap-x-4">
             <CustomButton
                 key="reject"
-                classes="grow"
-                containerClasses="border border-red-500 p-2 rounded-xl bg-red-500"
-                text="Reject"
-                textClasses="text-center text-white font-semibold text-lg"
-                handleClick={handleReject}
+                classes={"grow"}
+                containerClasses={"border border-red-500 p-2 rounded-xl bg-red-500"}
+                text={"Reject"}
+                textClasses={"text-center text-white font-semibold text-lg"}
+                handleClick={handleRejectPrompt}
                 disabled={loading}
             />
             <CustomButton

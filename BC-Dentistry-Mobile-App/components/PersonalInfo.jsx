@@ -1,28 +1,23 @@
 import { View, Text } from 'react-native'
-import { Field } from './index'
+import React from 'react'
+import Field from './Field'
 
-const personalFields = [
-  ['emiratesID', 'Emirates ID'],
-  ['firstName', 'First name'],
-  ['lastName', 'Last name'],
-  ['dateOfBirth', 'Date of birth'],
-  ['address', 'Address'],
-  ['contactNumber', 'Mobile phone'],
-  ['email', 'Email address'],
-  ['gender', 'Gender'],
-]
+const PersonalInfo = ({ pdata }) => {
+  const user = Array.isArray(pdata) ? pdata[0] : pdata;
 
-const PersonalInfo = ({ pdata = [] }) => {
-  const patient = pdata[0]
   return (
-    <View className="flex flex-col gap-2" accessible accessibilityLabel="Personal information">
-      <Text accessibilityRole="header" className="text-2xl font-bold bg-gray-200 rounded-lg p-3">Personal information</Text>
+    <View className="flex flex-col gap-2">
+      <Text className="text-2xl font-bold bg-gray-200 rounded-lg p-3">Personal Info</Text>
       <View className="mb-4 p-2 gap-5">
-        {!patient ? (
-          <Text accessibilityRole="alert">Patient information is unavailable.</Text>
-        ) : personalFields.map(([key, label]) => (
-          <Field key={key} fieldTitle={label} fieldText={patient[key] == null || patient[key] === '' ? 'Not provided' : String(patient[key])} />
-        ))}
+        <Field fieldTitle="First Name" fieldText={user?.firstName || 'Not provided'} />
+        <Field fieldTitle="Last Name" fieldText={user?.lastName || 'Not provided'} />
+        <Field fieldTitle="Emirates ID" fieldText={user?.emiratesID || 'Not provided'} />
+        <Field fieldTitle="Email" fieldText={user?.email || 'Not provided'} />
+        <Field fieldTitle="Mobile Phone" fieldText={user?.contactNumber || 'Not provided'} />
+        <Field fieldTitle="Birth Date" fieldText={user?.dateOfBirth || 'Not provided'} />
+        <Field fieldTitle="Gender" fieldText={user?.gender || 'Not provided'} />
+        <Field fieldTitle="Nationality" fieldText={user?.nationality || 'Not provided'} />
+        <Field fieldTitle="Address" fieldText={user?.address || 'Not provided'} />
       </View>
     </View>
   )

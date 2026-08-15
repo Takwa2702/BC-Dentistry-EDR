@@ -135,23 +135,6 @@ const SetNewAppointmentForm2 = ({ Id, classes, resetForm }) => {
         </div>
       )}
 
-      {/* Inline internal styles for scrollbar */}
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #888;
-          border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: #555;
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @font-face {
     font-family: 'Inter';
     src: url('./assets/fonts/Inter-Thin.ttf') format('truetype');
@@ -128,13 +132,15 @@ body{
   
 
   .loginTh, .signupTh{
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 45%, #f8fafc 100%);
+    background:
+      linear-gradient(90deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0)),
+      url("./assets/images/dental-hospital-login.jpg") center / cover no-repeat;
   }
 
 
 .loginTh2, .signupTh2{
     background-color: transparent;
-    position: relative;
+    position: absolute;
 }
 
 .loginTh2::after,.signupTh2::after{

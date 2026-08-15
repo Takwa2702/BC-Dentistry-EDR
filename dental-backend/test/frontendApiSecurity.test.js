@@ -14,14 +14,16 @@ const route = (pattern) => {
 test('database API defines authorization middleware before protected routes are registered', () => {
   const definitions = [
     'const getBearerToken =',
-    'const safeTokenEquals =',
     'const authenticateToken =',
-    'const requireRoles =',
-    'const authorizeAdminRegistration ='
+    'const requireRoles ='
   ];
-  const firstProtectedRoute = databaseApi.indexOf("app.post('/register', authorizeAdminRegistration");
+  const protectedRegistrationRoute = "app.post('/register', authenticateToken, requireRoles('system')";
+  const firstProtectedRoute = databaseApi.indexOf(protectedRegistrationRoute);
 
-  assert.ok(firstProtectedRoute > 0, 'Expected the protected registration route');
+  assert.ok(
+    firstProtectedRoute > 0,
+    'Expected registration to require an authenticated system user'
+  );
   for (const definition of definitions) {
     const position = databaseApi.indexOf(definition);
     assert.ok(position >= 0, `Expected ${definition} to be defined`);
@@ -47,8 +49,11 @@ test('doctor patient detail and list require assignment plus Fabric actor valida
   assert.match(selfList, /JSON_CONTAINS\(Patient\.Doctors/);
 });
 
-test('sample lab results are disabled in production API', () => {
-  const source = route(/app\.get\('\/Lab_Results'[\s\S]*?\n\}\);/);
-  assert.match(source, /501/);
-  assert.match(source, /LAB_RESULTS_NOT_IMPLEMENTED/);
+test('lab results use patient and clinic scoped role-specific responses', () => {
+  assert.match(databaseApi, /Lab_Result\.Patient_Blockchain_ID=\?/);
+  assert.match(databaseApi, /Lab_Result\.Clinic_ID=\?/);
+  assert.match(databaseApi, /operational-metadata/);
+  assert.match(databaseApi, /labOperationalMetadata/);
+  assert.match(databaseApi, /requireRoles\('admin', 'doctor', 'patient'\)/);
+  assert.doesNotMatch(databaseApi, /LAB_RESULTS_NOT_IMPLEMENTED/);
 });

@@ -14,7 +14,8 @@ export default function ChangePassword() {
       const response = await fetch(databaseUrl('/change-password'), { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ currentPassword: form.currentPassword, newPassword: form.newPassword }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error?.message || 'Unable to change password');
-      localStorage.setItem('token', payload.token); localStorage.setItem('user', JSON.stringify(payload.user));
+      sessionStorage.setItem('user', JSON.stringify(payload.user));
+      window.dispatchEvent(new Event('edr-session-changed'));
       navigate(payload.user.role === 'system' ? '/clinics' : payload.user.role === 'patient' ? '/my-record' : '/dashboard', { replace: true });
     } catch (e) { setError(e.message); } finally { setSaving(false); }
   };

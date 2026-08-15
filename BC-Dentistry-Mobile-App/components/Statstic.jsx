@@ -1,7 +1,7 @@
 import { View, Text, Image } from 'react-native'
 import React from 'react'
 
-const Statstic = ({label, number, style, icon}) => {
+const Statstic = ({ label, number, style, icon }) => {
   return (
     <View className="bg-white flex flex-col gap-y-3 w-40 p-5 mr-4 rounded-2xl">
         <View className="flex flex-row justify-between items-end">
@@ -10,7 +10,7 @@ const Statstic = ({label, number, style, icon}) => {
                 <Image source={icon} resizeMode='cover' className="w-8 h-8" />
             </View>
         </View>
-        <Text className="text-lg">{label}</Text>
+        <Text className="text-lg text-gray-800">{label}</Text>
     </View>
   )
 }

@@ -28,9 +28,9 @@ const AppointmentsTable = () => {
                 key={index}
                 meetingFor={appointment.Meeting_For}
                 id={appointment.Appointment_ID}
-                patientName={appointment.Patient_ID} 
-                doctorName={appointment.Doctor_ID} 
-                dateAndTime={appointment.Date} 
+                patientName={appointment.Patient_Name || appointment.patientName || 'Patient name unavailable'}
+                doctorName={appointment.Doctor_Name || appointment.doctorName || 'Doctor name unavailable'}
+                dateAndTime={appointment.Appointment_Date_Time || appointment.Date}
             />
         );
     });
@@ -42,8 +42,8 @@ const AppointmentsTable = () => {
             <div style={{ gridTemplateColumns: '5fr 2fr 5fr 6fr 8fr 1fr' }} className="table-header grid px-4 py-3 rounded-xl bg-gray-200 mb-3">
                 <div>Meeting for</div>
                 <div>ID</div>
-                <div>Doctor ID</div>
-                <div>Patient ID</div>
+                <div>Doctor</div>
+                <div>Patient</div>
                 <div>Date & Time</div>
                 <div>...</div>
             </div>

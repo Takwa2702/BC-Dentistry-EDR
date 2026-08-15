@@ -22,25 +22,46 @@ services:
       timeout: 5s
       retries: 20
       start_period: 30s
+    networks:
+      - application-private
 
   blockchain-api:
     build:
       context: ./dental-backend
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
     environment:
+      NODE_ENV: production
       PORT: 8081
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      JWT_PUBLIC_KEY_BASE64: ${JWT_PUBLIC_KEY_BASE64:?set JWT_PUBLIC_KEY_BASE64 in .env}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-RS256}
+      JWT_ISSUER: ${JWT_ISSUER:-bc-dentistry-auth}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-bc-dentistry-api}
+      REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:?set REFRESH_TOKEN_PEPPER in .env}
+      BLOCKCHAIN_INTERNAL_TOKEN: ${BLOCKCHAIN_INTERNAL_TOKEN:?set BLOCKCHAIN_INTERNAL_TOKEN in .env}
       FABRIC_CHANNEL: ${FABRIC_CHANNEL:-mychannel}
       FABRIC_CHAINCODE: ${FABRIC_CHAINCODE:-basic}
       FABRIC_DISCOVERY_ENABLED: ${FABRIC_DISCOVERY_ENABLED:-true}
       FABRIC_DISCOVERY_AS_LOCALHOST: "false"
+      FABRIC_CA_TLS_VERIFY: ${FABRIC_CA_TLS_VERIFY:-true}
       FABRIC_CONNECTION_PROFILE_SOURCE: /fabric-connection/connection-org1.json
       FABRIC_CONNECTION_PROFILE: /app/runtime/connection-org1.container.json
       FABRIC_WALLET_PATH: /fabric-wallet
       FABRIC_HOST_GATEWAY: host.docker.internal
       RADIOGRAPHIC_STORAGE_ROOT: /var/lib/edr/radiographic-files
       RADIOGRAPHIC_MAX_FILE_BYTES: ${RADIOGRAPHIC_MAX_FILE_BYTES:-536870912}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-mydatabase}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_SERVICE_ACCOUNT_BASE64: ${FIREBASE_SERVICE_ACCOUNT_BASE64:-}
+      WEB_APP_URL: ${WEB_APP_URL:-http://localhost:5173}
+      PUSH_TOKEN_STALE_DAYS: ${PUSH_TOKEN_STALE_DAYS:-60}
     extra_hosts:
       - "host.docker.internal:host-gateway"
       - "peer0.org1.example.com:host-gateway"
@@ -49,16 +70,19 @@ services:
       - "ca.org1.example.com:host-gateway"
     volumes:
       - ${FABRIC_CONNECTION_DIR:-./dental-backend/connection}:/fabric-connection:ro
-      - ${FABRIC_WALLET_DIR:-./dental-backend/wallet}:/fabric-wallet:ro
+      - ${FABRIC_WALLET_DIR:-./dental-backend/wallet}:/fabric-wallet
       - edr-radiographic-files:/var/lib/edr/radiographic-files
-    ports:
-      - "${BLOCKCHAIN_API_PORT:-8081}:8081"
+    expose:
+      - "8081"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 10
       start_period: 20s
+    networks:
+      - application-private
+      - fabric-access
 
   database-api:
     build:
@@ -70,6 +94,7 @@ services:
       blockchain-api:
         condition: service_healthy
     environment:
+      NODE_ENV: production
       PORT: 8080
       DB_HOST: mysql
       DB_PORT: 3306
@@ -77,25 +102,51 @@ services:
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      JWT_PRIVATE_KEY_BASE64: ${JWT_PRIVATE_KEY_BASE64:?set JWT_PRIVATE_KEY_BASE64 in .env}
+      JWT_PUBLIC_KEY_BASE64: ${JWT_PUBLIC_KEY_BASE64:?set JWT_PUBLIC_KEY_BASE64 in .env}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-RS256}
+      JWT_ACTIVE_KID: ${JWT_ACTIVE_KID:-primary}
+      JWT_ISSUER: ${JWT_ISSUER:-bc-dentistry-auth}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-bc-dentistry-api}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-10m}
+      WEB_SESSION_IDLE_TTL: ${WEB_SESSION_IDLE_TTL:-30m}
+      WEB_SESSION_ABSOLUTE_TTL: ${WEB_SESSION_ABSOLUTE_TTL:-8h}
+      MOBILE_SESSION_IDLE_TTL: ${MOBILE_SESSION_IDLE_TTL:-7d}
+      MOBILE_SESSION_ABSOLUTE_TTL: ${MOBILE_SESSION_ABSOLUTE_TTL:-30d}
+      SESSION_RETENTION_DAYS: ${SESSION_RETENTION_DAYS:-90}
+      APPOINTMENT_DEFAULT_DURATION_MINUTES: ${APPOINTMENT_DEFAULT_DURATION_MINUTES:-30}
+      REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:?set REFRESH_TOKEN_PEPPER in .env}
+      SESSION_METADATA_PEPPER: ${SESSION_METADATA_PEPPER:-}
+      MFA_SECRET_ENCRYPTION_KEY: ${MFA_SECRET_ENCRYPTION_KEY:?set MFA_SECRET_ENCRYPTION_KEY in .env}
+      MFA_ISSUER: ${MFA_ISSUER:-EDR}
       ADMIN_BOOTSTRAP_TOKEN: ${ADMIN_BOOTSTRAP_TOKEN:-}
       BLOCKCHAIN_API_URL: http://blockchain-api:8081
+      BLOCKCHAIN_INTERNAL_TOKEN: ${BLOCKCHAIN_INTERNAL_TOKEN:?set BLOCKCHAIN_INTERNAL_TOKEN in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-    ports:
-      - "${DATABASE_API_PORT:-8080}:8080"
+      RADIOGRAPHIC_MAX_FILE_BYTES: ${RADIOGRAPHIC_MAX_FILE_BYTES:-536870912}
+    expose:
+      - "8080"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 10
       start_period: 20s
+    networks:
+      - application-private
 
   web-frontend:
     build:
       context: ./bc-dentistry-frontend
       args:
         VITE_DATABASE_API_URL: /api/database
-        VITE_BLOCKCHAIN_API_URL: /api/blockchain
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
+        VITE_FIREBASE_VAPID_KEY: ${VITE_FIREBASE_VAPID_KEY:-}
     restart: unless-stopped
     depends_on:
       database-api:
@@ -110,7 +161,16 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks:
+      - edge
+      - application-private
 
 volumes:
   edr-mysql-data:
   edr-radiographic-files:
+
+networks:
+  edge:
+  application-private:
+    internal: true
+  fabric-access:

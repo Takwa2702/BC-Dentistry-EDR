@@ -367,7 +367,7 @@ CREATE TABLE `Doctor` (
   `Blockchain_ID` varchar(50) DEFAULT NULL,
   `License_Number` varchar(100) DEFAULT NULL,
   `Emirates_ID` varchar(100) DEFAULT NULL,
-  `Clinic_ID` int DEFAULT NULL,
+  `Clinic_ID` int NOT NULL,
   `Modified_Date` datetime DEFAULT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `Blockchain_ID` (`Blockchain_ID`),
@@ -383,7 +383,9 @@ CREATE TABLE `Doctor` (
 
 LOCK TABLES `Doctor` WRITE;
 /*!40000 ALTER TABLE `Doctor` DISABLE KEYS */;
-INSERT INTO `Doctor` (`ID`,`Works_At`,`Specialty`,`Blockchain_ID`) VALUES (1,'Smile Dental Clinic','Orthodontics',NULL),(2,'Bright Smiles Clinic','Periodontics',NULL),(3,'Healthy Teeth Dental','Endodontics',NULL),(4,'Advanced Dental Care','Oral Surgery',NULL),(5,'Family Dentistry Center','Pediatric Dentistry',NULL),(15,'Dental Clinic A','Orthodontist','Doctor1'),(16,'Dental Clinic B','Orthodontist','Doctor2');
+INSERT INTO `Doctor` (`ID`,`Works_At`,`Specialty`,`Blockchain_ID`,`License_Number`,`Emirates_ID`,`Clinic_ID`,`Modified_Date`) VALUES
+(15,'Dental Clinic A','Orthodontist','Doctor1','DHA-DOCTOR-0001','784-1985-0000001-1',1,'2025-07-17 00:00:00'),
+(16,'Dental Clinic B','Endodontist','Doctor2','DHA-DOCTOR-0002','784-1986-0000002-2',2,'2025-06-17 00:00:00');
 /*!40000 ALTER TABLE `Doctor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -467,6 +469,48 @@ LOCK TABLES `Lab_Prescriptions` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for patient- and clinic-scoped laboratory results
+--
+
+DROP TABLE IF EXISTS `Lab_Result`;
+CREATE TABLE `Lab_Result` (
+  `Lab_Result_ID` varchar(64) NOT NULL,
+  `Patient_Blockchain_ID` varchar(64) NOT NULL,
+  `Clinic_ID` int NOT NULL,
+  `Ordering_Doctor_ID` varchar(64) DEFAULT NULL,
+  `Clinical_Record_ID` varchar(64) DEFAULT NULL,
+  `Order_ID` varchar(64) NOT NULL,
+  `Test_Name` varchar(255) NOT NULL,
+  `Test_Code` varchar(100) DEFAULT NULL,
+  `Discipline` varchar(100) DEFAULT NULL,
+  `Status` enum('ordered','collected','processing','completed','corrected','cancelled') NOT NULL DEFAULT 'ordered',
+  `Ordered_At` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Collected_At` datetime DEFAULT NULL,
+  `Completed_At` datetime DEFAULT NULL,
+  `Result_Data` json DEFAULT NULL,
+  `Interpretation` text,
+  `Reference_Ranges` json DEFAULT NULL,
+  `Notes` text,
+  `Data_Hash` char(64) DEFAULT NULL,
+  `Corrected_From_ID` varchar(64) DEFAULT NULL,
+  `Created_At` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Updated_At` datetime DEFAULT NULL,
+  PRIMARY KEY (`Lab_Result_ID`),
+  UNIQUE KEY `uq_lab_result_order` (`Clinic_ID`,`Order_ID`),
+  KEY `idx_lab_result_patient_date` (`Patient_Blockchain_ID`,`Ordered_At`),
+  KEY `idx_lab_result_clinic_status` (`Clinic_ID`,`Status`,`Ordered_At`),
+  KEY `idx_lab_result_doctor_date` (`Ordering_Doctor_ID`,`Ordered_At`),
+  CONSTRAINT `fk_lab_result_patient` FOREIGN KEY (`Patient_Blockchain_ID`) REFERENCES `Patient` (`Blockchain_ID`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_lab_result_clinic` FOREIGN KEY (`Clinic_ID`) REFERENCES `Organization` (`Organization_ID`),
+  CONSTRAINT `fk_lab_result_doctor` FOREIGN KEY (`Ordering_Doctor_ID`) REFERENCES `Doctor` (`Blockchain_ID`) ON DELETE SET NULL,
+  CONSTRAINT `fk_lab_result_clinical_record` FOREIGN KEY (`Clinical_Record_ID`) REFERENCES `Clinical_Record` (`Record_ID`) ON DELETE SET NULL,
+  CONSTRAINT `fk_lab_result_correction` FOREIGN KEY (`Corrected_From_ID`) REFERENCES `Lab_Result` (`Lab_Result_ID`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Legacy unscoped table retained for migration reference only. It is not read by production APIs.
+--
+
 -- Table structure for table `Lab_Results`
 --
 
@@ -823,6 +867,9 @@ CREATE TABLE `Organization` (
 
 LOCK TABLES `Organization` WRITE;
 /*!40000 ALTER TABLE `Organization` DISABLE KEYS */;
+INSERT INTO `Organization` (`Organization_ID`,`Name`,`Address`,`Description`,`Coordinates`,`Type`,`IsActive`,`Created_Date`,`Modified_Date`) VALUES
+(1,'Dental Clinic A','Dubai, UAE','Seed clinic for the Clinic 1 tenant',NULL,'Dental Clinic',1,'2025-01-22',NULL),
+(2,'Dental Clinic B','Dubai, UAE','Seed clinic for the Clinic 2 tenant',NULL,'Dental Clinic',1,'2025-01-22',NULL);
 /*!40000 ALTER TABLE `Organization` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -869,7 +916,7 @@ CREATE TABLE `Patient` (
   `Allergies` json DEFAULT NULL,
   `Medications` json DEFAULT NULL,
   `Insurance_Details` json DEFAULT NULL,
-  `Clinic_ID` int DEFAULT NULL,
+  `Clinic_ID` int NOT NULL,
   `Doctors` json DEFAULT NULL,
   `Modified_Date` datetime DEFAULT NULL,
   PRIMARY KEY (`ID`),
@@ -886,7 +933,10 @@ CREATE TABLE `Patient` (
 
 LOCK TABLES `Patient` WRITE;
 /*!40000 ALTER TABLE `Patient` DISABLE KEYS */;
-INSERT INTO `Patient` (`ID`,`Date_of_Birth`,`Gender`,`Emirates_ID`,`Blockchain_ID`) VALUES (17,'1980-01-01','Male','1234567890','Patient1'),(18,'1990-02-02','Female','9876543210','Patient2'),(19,'1985-03-03','Male','1357924680','Patient3');
+INSERT INTO `Patient` (`ID`,`Date_of_Birth`,`Gender`,`Emirates_ID`,`Blockchain_ID`,`Nationality`,`Address`,`Blood_Type`,`Medical_History`,`Allergies`,`Medications`,`Insurance_Details`,`Clinic_ID`,`Doctors`,`Modified_Date`) VALUES
+(17,'1980-01-01','Male','1234567890','Patient1',NULL,'123 Main Street, Dubai',NULL,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY(),JSON_OBJECT(),2,JSON_ARRAY('Doctor2'),'2025-05-08 00:00:00'),
+(18,'1990-02-02','Female','9876543210','Patient2',NULL,'456 Elm Street, Dubai',NULL,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY(),JSON_OBJECT(),2,JSON_ARRAY('Doctor2'),NULL),
+(19,'1985-03-03','Male','1357924680','Patient3',NULL,'789 Pine Street, Dubai',NULL,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY(),JSON_OBJECT(),1,JSON_ARRAY('Doctor1'),NULL);
 /*!40000 ALTER TABLE `Patient` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1062,6 +1112,8 @@ CREATE TABLE `User` (
   `Created_Date` date DEFAULT NULL,
   `IsActive` tinyint(1) DEFAULT NULL,
   `Must_Change_Password` tinyint(1) NOT NULL DEFAULT '0',
+  `Security_Version` int unsigned NOT NULL DEFAULT '1',
+  `Sessions_Invalid_Before` datetime(3) DEFAULT NULL,
   `Last_Login_Date` date DEFAULT NULL,
   PRIMARY KEY (`ID`),
   KEY `Role_ID` (`Role_ID`),
@@ -1075,9 +1127,80 @@ CREATE TABLE `User` (
 
 LOCK TABLES `User` WRITE;
 /*!40000 ALTER TABLE `User` DISABLE KEYS */;
-INSERT INTO `User` VALUES (9,'Admin2','User2','$2b$10$v5lsbuAYwdZQzZ/hN.FVL.6lYJwnZLBjfD6sW66/H8GqMXFtncwGK','admin2@gmail.com','1234567890',2,'2025-02-03',1,0,'2025-07-17'),(10,'Admin1','User1','$2b$10$WEDbeiz3VjsRUcgYiKhw..2oTKmGE/lxeMNV2Haqx05MlASU7/hI2','admin1@gmail.com','1234567890',2,'2025-02-03',1,0,'2025-07-17'),(15,'Alice','Wong','$2b$10$VDdk6Dc75k7jJp.bNsDjM.scicJoNlBJGqdzAs2b0Layd5sN1so3G','doctor1@example.com','0509876543',3,'2025-02-03',1,0,'2025-07-17'),(16,'Bob','Smith','$2b$10$tg8rV6u4PeIxDKy.TcoB.eIHsV3TLABYxSs3ZgPR9CHPVgFs4M42a','doctor2@example.com','0509871234',3,'2025-02-03',1,0,'2025-06-17'),(17,'John','Doe','$2b$10$ZJP0KFBm9N.CjOCvJX6pQOKV.3fyqyd2kyu1irqsjjEy9MZBSFgl6','john.doe@example.com','0501234567',4,'2025-03-26',1,0,'2025-05-08'),(18,'Jane','Doe','$2b$10$JKimR5gHhcYtI50k0FvDveM7dEsqq6s7gbmlTOh2sahbhTOabsveG','jane.doe@example.com','0507654321',4,'2025-03-26',1,0,NULL),(19,'Mark','Lee','$2b$10$jTozqpdqC0uSi1DNcT8VG.CY/bdUqhIvafgoN.wXJ8wkRSTjJhkz.','mark.lee@example.com','0502468135',4,'2025-03-26',1,0,NULL);
+INSERT INTO `User` VALUES (9,'Admin2','User2','$2b$10$v5lsbuAYwdZQzZ/hN.FVL.6lYJwnZLBjfD6sW66/H8GqMXFtncwGK','admin2@gmail.com','1234567890',2,'2025-02-03',1,0,1,NULL,'2025-07-17'),(10,'Admin1','User1','$2b$10$WEDbeiz3VjsRUcgYiKhw..2oTKmGE/lxeMNV2Haqx05MlASU7/hI2','admin1@gmail.com','1234567890',2,'2025-02-03',1,0,1,NULL,'2025-07-17'),(15,'Alice','Wong','$2b$10$VDdk6Dc75k7jJp.bNsDjM.scicJoNlBJGqdzAs2b0Layd5sN1so3G','doctor1@example.com','0509876543',3,'2025-02-03',1,0,1,NULL,'2025-07-17'),(16,'Bob','Smith','$2b$10$tg8rV6u4PeIxDKy.TcoB.eIHsV3TLABYxSs3ZgPR9CHPVgFs4M42a','doctor2@example.com','0509871234',3,'2025-02-03',1,0,1,NULL,'2025-06-17'),(17,'John','Doe','$2b$10$ZJP0KFBm9N.CjOCvJX6pQOKV.3fyqyd2kyu1irqsjjEy9MZBSFgl6','john.doe@example.com','0501234567',4,'2025-03-26',1,0,1,NULL,'2025-05-08'),(18,'Jane','Doe','$2b$10$JKimR5gHhcYtI50k0FvDveM7dEsqq6s7gbmlTOh2sahbhTOabsveG','jane.doe@example.com','0507654321',4,'2025-03-26',1,0,1,NULL,NULL),(19,'Mark','Lee','$2b$10$jTozqpdqC0uSi1DNcT8VG.CY/bdUqhIvafgoN.wXJ8wkRSTjJhkz.','mark.lee@example.com','0502468135',4,'2025-03-26',1,0,1,NULL,NULL);
 /*!40000 ALTER TABLE `User` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for secure authentication sessions
+--
+
+DROP TABLE IF EXISTS `Auth_Session_Event`;
+DROP TABLE IF EXISTS `Auth_Refresh_Token`;
+DROP TABLE IF EXISTS `Auth_Session`;
+CREATE TABLE `Auth_Session` (
+  `Session_ID` char(36) NOT NULL,
+  `User_ID` int NOT NULL,
+  `Client_Type` enum('web','ios','android') NOT NULL,
+  `Device_Label` varchar(255) DEFAULT NULL,
+  `Token_Family_ID` char(36) NOT NULL,
+  `Security_Version` int unsigned NOT NULL,
+  `Csrf_Token_Hash` char(64) DEFAULT NULL,
+  `Created_At` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `Last_Seen_At` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `Idle_Expires_At` datetime(3) NOT NULL,
+  `Absolute_Expires_At` datetime(3) NOT NULL,
+  `Revoked_At` datetime(3) DEFAULT NULL,
+  `Revocation_Reason` varchar(255) DEFAULT NULL,
+  `Created_IP_Hash` char(64) DEFAULT NULL,
+  `Last_IP_Hash` char(64) DEFAULT NULL,
+  `User_Agent_Hash` char(64) DEFAULT NULL,
+  PRIMARY KEY (`Session_ID`),
+  UNIQUE KEY `uq_auth_session_family` (`Token_Family_ID`),
+  KEY `idx_auth_session_user_active` (`User_ID`,`Revoked_At`,`Absolute_Expires_At`),
+  KEY `idx_auth_session_cleanup` (`Absolute_Expires_At`,`Revoked_At`),
+  CONSTRAINT `fk_auth_session_user` FOREIGN KEY (`User_ID`) REFERENCES `User` (`ID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `Auth_Refresh_Token` (
+  `Token_ID` char(36) NOT NULL,
+  `Session_ID` char(36) NOT NULL,
+  `Token_Hash` char(64) NOT NULL,
+  `Parent_Token_ID` char(36) DEFAULT NULL,
+  `Replaced_By_Token_ID` char(36) DEFAULT NULL,
+  `Issued_At` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `Expires_At` datetime(3) NOT NULL,
+  `Used_At` datetime(3) DEFAULT NULL,
+  `Revoked_At` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`Token_ID`),
+  UNIQUE KEY `uq_auth_refresh_hash` (`Token_Hash`),
+  KEY `idx_auth_refresh_session` (`Session_ID`,`Revoked_At`,`Expires_At`),
+  KEY `idx_auth_refresh_cleanup` (`Expires_At`,`Revoked_At`),
+  CONSTRAINT `fk_auth_refresh_session` FOREIGN KEY (`Session_ID`) REFERENCES `Auth_Session` (`Session_ID`) ON DELETE CASCADE,
+  CONSTRAINT `fk_auth_refresh_parent` FOREIGN KEY (`Parent_Token_ID`) REFERENCES `Auth_Refresh_Token` (`Token_ID`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `Auth_Session_Event` (
+  `Event_ID` bigint NOT NULL AUTO_INCREMENT,
+  `Session_ID` char(36) DEFAULT NULL,
+  `User_ID` int NOT NULL,
+  `Event_Type` varchar(50) NOT NULL,
+  `Occurred_At` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `Details` json DEFAULT NULL,
+  PRIMARY KEY (`Event_ID`),
+  KEY `idx_auth_event_user_time` (`User_ID`,`Occurred_At`),
+  KEY `idx_auth_event_session_time` (`Session_ID`,`Occurred_At`),
+  CONSTRAINT `fk_auth_event_session` FOREIGN KEY (`Session_ID`) REFERENCES `Auth_Session` (`Session_ID`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `Schema_Migration` (
+  `Migration_ID` varchar(100) NOT NULL,
+  `Applied_At` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `Checksum_SHA256` char(64) DEFAULT NULL,
+  PRIMARY KEY (`Migration_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO `Schema_Migration` (`Migration_ID`) VALUES ('2026-07-29-secure-auth-sessions');
 
 --
 -- Table structure for table `UserRole`
@@ -1133,6 +1256,21 @@ UNLOCK TABLES;
 --
 -- Dumping routines for database 'mydatabase'
 --
+
+-- Enforce the cross-entity relationships used by the application tenant model.
+ALTER TABLE `Admin`
+  ADD CONSTRAINT `fk_admin_organization` FOREIGN KEY (`Organization_ID`) REFERENCES `Organization` (`Organization_ID`);
+ALTER TABLE `Doctor`
+  ADD CONSTRAINT `fk_doctor_user` FOREIGN KEY (`ID`) REFERENCES `User` (`ID`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_doctor_clinic` FOREIGN KEY (`Clinic_ID`) REFERENCES `Organization` (`Organization_ID`);
+ALTER TABLE `Patient`
+  ADD CONSTRAINT `fk_patient_user` FOREIGN KEY (`ID`) REFERENCES `User` (`ID`) ON DELETE CASCADE;
+ALTER TABLE `Clinical_Record`
+  ADD CONSTRAINT `fk_clinical_patient_blockchain` FOREIGN KEY (`Patient_Blockchain_ID`) REFERENCES `Patient` (`Blockchain_ID`) ON DELETE RESTRICT,
+  ADD CONSTRAINT `fk_clinical_doctor_blockchain` FOREIGN KEY (`Created_By_Doctor_ID`) REFERENCES `Doctor` (`Blockchain_ID`);
+ALTER TABLE `Request`
+  ADD CONSTRAINT `fk_request_organization` FOREIGN KEY (`Organization_ID`) REFERENCES `Organization` (`Organization_ID`),
+  ADD CONSTRAINT `fk_request_data_access` FOREIGN KEY (`Data_Access_ID`) REFERENCES `Data_Access` (`ID`);
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

@@ -9,17 +9,38 @@ const path = require('path');
 const values = (name, defaults) => (process.env[name] || defaults)
     .split(',').map((value) => value.trim()).filter(Boolean);
 
+const clinicMap = (name, defaults) => new Map(
+    values(name, defaults).map((entry) => {
+        const separator = entry.lastIndexOf(':');
+        if (separator <= 0 || separator === entry.length - 1) {
+            throw new Error(`${name} entries must use actorID:clinicID`);
+        }
+        return [entry.slice(0, separator), entry.slice(separator + 1)];
+    }),
+);
+
+const scopedActors = (role, idsName, idsDefault, clinicsName, clinicsDefault) => {
+    const clinics = clinicMap(clinicsName, clinicsDefault);
+    return values(idsName, idsDefault).map((actorID) => {
+        const clinicID = clinics.get(actorID);
+        if (!clinicID) throw new Error(`Missing clinic mapping for ${role} ${actorID} in ${clinicsName}`);
+        return { label: `${role}-${actorID}`, role, actorID, clinicID };
+    });
+};
+
 const roleIdentities = () => [
     ...values('FABRIC_ADMIN_CLINIC_IDS', '1,2').map((clinicID) => ({
         label: `admin-${clinicID}`, role: 'admin', actorID: `AdminClinic${clinicID}`, clinicID,
     })),
     { label: 'role-system', role: 'system', actorID: 'system', clinicID: '' },
-    ...values('FABRIC_DOCTOR_IDS', 'Doctor1,Doctor2').map((actorID) => ({
-        label: `doctor-${actorID}`, role: 'doctor', actorID,
-    })),
-    ...values('FABRIC_PATIENT_IDS', 'Patient1,Patient2,Patient3').map((actorID) => ({
-        label: `patient-${actorID}`, role: 'patient', actorID,
-    })),
+    ...scopedActors(
+        'doctor', 'FABRIC_DOCTOR_IDS', 'Doctor1,Doctor2',
+        'FABRIC_DOCTOR_CLINICS', 'Doctor1:1,Doctor2:2',
+    ),
+    ...scopedActors(
+        'patient', 'FABRIC_PATIENT_IDS', 'Patient1,Patient2,Patient3',
+        'FABRIC_PATIENT_CLINICS', 'Patient1:2,Patient2:2,Patient3:1',
+    ),
 ];
 
 async function main() {

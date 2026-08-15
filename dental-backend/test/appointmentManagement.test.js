@@ -26,29 +26,38 @@ test('admin-only create validates both patient and doctor clinic scope', () => {
   assert.match(source, /Patient_Doctors/);
   assert.match(source, /APPOINTMENT_DOCTOR_SCOPE_DENIED/);
   assert.match(source, /requireAdminClinic\(req, rows\[0\]\.Doctor_Clinic_ID\)/);
+  assert.match(source, /Doctor\.Specialty AS Doctor_Specialty/);
+  assert.match(source, /APPOINTMENT_SPECIALTY_MISMATCH/);
+  assert.match(source, /authoritativeSpecialty/);
   assert.match(source, /INSERT INTO Appointment/);
 });
 
 test('appointment doctor options include clinic doctors and assigned doctors without clinic metadata', () => {
   const source = route('get', '/appointment-options/doctors');
   assert.match(source, /requireRoles\('admin'\)/);
-  assert.match(source, /Doctor\.Clinic_ID=\?/);
-  assert.match(source, /Doctor\.Clinic_ID IS NULL/);
-  assert.match(source, /JSON_CONTAINS\(Patient\.Doctors/);
+  assert.match(api, /const CLINIC_DOCTOR_SCOPE = `\(Doctor\.Clinic_ID=\?/);
+  assert.match(api, /Doctor\.Clinic_ID IS NULL/);
+  assert.match(api, /JSON_CONTAINS\(Patient\.Doctors/);
+  assert.match(source, /User\.IsActive=1/);
 });
 
 test('update and cancel are admin-only and patient-clinic scoped', () => {
   const update = route('put', '/appointments/:id');
   const cancel = route('patch', '/appointments/:id/cancel');
   for (const source of [update, cancel]) { assert.match(source, /requireRoles\('admin'\)/); assert.match(source, /requireAdminClinic/); }
-  assert.match(update, /Status='scheduled'/);
+  assert.match(update, /APPOINTMENT_CONTEXT_IMMUTABLE/);
+  assert.match(update, /APPOINTMENT_SPECIALTY_IMMUTABLE/);
+  assert.match(update, /APPOINTMENT_TERMINAL_STATE/);
+  assert.doesNotMatch(update, /Status='scheduled'/);
   assert.match(cancel, /Status='cancelled'/);
 });
 
 test('patient list derives identity from JWT and supports upcoming and past partitions', () => {
-  assert.match(api, /Patient\.Blockchain_ID = \?/);
-  assert.match(api, /params = \[req\.user\.blockchainID\]/);
-  assert.match(api, /period === 'upcoming'/);
-  assert.match(api, /period === 'past'/);
-  assert.doesNotMatch(api, /req\.query\.patientID/);
+  const start = api.indexOf('const listAppointments = async');
+  const source = api.slice(start, api.indexOf('\n};', start) + 3);
+  assert.match(source, /Patient\.Blockchain_ID = \?/);
+  assert.match(source, /params = \[req\.user\.blockchainID\]/);
+  assert.match(source, /period === 'upcoming'/);
+  assert.match(source, /period === 'past'/);
+  assert.doesNotMatch(source, /req\.query\.patientID/);
 });

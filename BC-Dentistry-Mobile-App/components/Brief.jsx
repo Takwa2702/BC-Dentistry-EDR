@@ -1,24 +1,23 @@
-import { View, Text, Image, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import React from 'react'
 
-import { CustomExpandable } from "./index"
+import CustomExpandable from "./CustomExpandable"
 import { icons } from '../constants'
+import { useRouter } from 'expo-router'
 
-import { useRouter, Link } from 'expo-router'
-
-
-
-const Brief = ({name, id}) => {
-    const route = useRouter()
-
+const Brief = ({ name, id }) => {
+  const route = useRouter();
+  const initial = (name?.[0] || 'P').toUpperCase();
 
   return (
     <View className='gap-y-7 rounded-lg'>
-        <View className='header w-full flex flex-row gap-x-8'>
-            <Image source={""} className='bg-gray-300 w-20 h-20 rounded-[1.5rem]' />
-            <View className='flex gap-y-1 justify-center'>
-                <Text className='text-4xl font-bold'>{name}</Text>
-                <Text className='text-xl'>ID: {id}</Text>
+        <View className='header w-full flex flex-row gap-x-6 items-center'>
+            <View className="w-20 h-20 bg-blue-900 rounded-[1.5rem] items-center justify-center">
+              <Text className="text-white text-3xl font-bold">{initial}</Text>
+            </View>
+            <View className='flex gap-y-1 justify-center flex-1'>
+                <Text className='text-3xl font-bold text-gray-900' numberOfLines={1}>{name}</Text>
+                <Text className='text-lg text-gray-600 font-medium'>ID: {id}</Text>
             </View>
         </View>
         
@@ -42,7 +41,6 @@ const Brief = ({name, id}) => {
                     containerClasses={'flex-col justify-between grow h-28'}
                     textClasses={'w-32'}
                 />
-
             </View>
 
             <CustomExpandable
@@ -55,11 +53,18 @@ const Brief = ({name, id}) => {
                 textClasses={'text-lg'}
             />
 
+            <CustomExpandable
+                handlePress={() => {route.push('/auditHistory')}}
+                icon={icons.blueClock}
+                bgColor={'blue-900'}
+                textColor={'white'}
+                text={'Access Audit History'}
+                containerClasses={'h-16 items-center flex-row gap-x-4'}
+                textClasses={'text-lg'}
+            />
         </View>
-
-
     </View>
   )
 }
 
-export default Brief
+export default Brief;

@@ -4,7 +4,7 @@ import Input from '../components/Input';
 import LoginSignUpBtn from '../components/LoginSignUpBtn';
 import LoginOption from '../components/LoginOption';
 import axios from 'axios';
-import { databaseUrl, jsonHeaders } from '../config/api.js';
+import { apiRequestErrorMessage, databaseUrl, jsonHeaders } from '../config/api.js';
 const Signup = () => {
 
     
@@ -62,7 +62,7 @@ const Signup = () => {
             navigate('/login');
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.error || 'Registration failed');
+            setError(apiRequestErrorMessage(err, 'Registration failed.'));
         }
     };
     
@@ -70,8 +70,8 @@ const Signup = () => {
 
     return (
         <div className={`loginTh ${isVisible ? 'absolute' : 'hidden'} w-full gap-y-8 items-center justify-center bg-gray-100 h-[100vh] w-[100vw] z-[999] top-0 left-0`}>
-            <div className="loginTh2 h-full flex flex-col justify-center absolute px-16 top-0 right-0">
-                <div className="rounded-lg p-6 w-[36em] z-40">
+            <div className="loginTh2 h-full w-full md:w-auto flex flex-col justify-center px-4 sm:px-8 md:px-16 top-0 right-0">
+                <div className="rounded-lg p-6 w-full md:w-[36em] z-40">
                     <form id="signup-form">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-4xl font-semibold text-left">Create Account</h2>

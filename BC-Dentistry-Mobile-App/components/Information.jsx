@@ -1,14 +1,15 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View } from 'react-native'
 import React from 'react'
 
-import { MedicalInfo, PersonalInfo } from './index'
+import MedicalInfo from './MedicalInfo'
+import PersonalInfo from './PersonalInfo'
 
-const Information = ({data}) => {
+const Information = ({ data }) => {
   return (
-    <ScrollView className='gap-y-8 max-h-[40vh]'>
-        <PersonalInfo pdata={[data]} />
-        <MedicalInfo mdata={data} />
-    </ScrollView>
+    <View className="gap-y-6">
+      <PersonalInfo pdata={data} />
+      <MedicalInfo mdata={data} />
+    </View>
   )
 }
 

@@ -13,7 +13,7 @@ if (!fs.existsSync(source)) {
 
 const profile = JSON.parse(fs.readFileSync(source, 'utf8'));
 const rewriteUrl = (url) => typeof url === 'string'
-    ? url.replace(/(grpcs?:\/\/)(localhost|127\.0\.0\.1)(?=:)/gi, `$1${gatewayHost}`)
+    ? url.replace(/((?:grpcs?|https?):\/\/)(localhost|127\.0\.0\.1)(?=:)/gi, `$1${gatewayHost}`)
     : url;
 
 for (const section of ['peers', 'orderers', 'certificateAuthorities']) {

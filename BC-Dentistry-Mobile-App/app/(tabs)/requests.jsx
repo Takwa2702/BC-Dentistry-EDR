@@ -1,107 +1,93 @@
-import { View, Text, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 import { RequestsHeader, DataRequest, NoRequests } from '../../components';
-import { authHeaders, blockchainUrl, getPatientBlockchainID } from '../../utils/api';
-
+import { fetchPatientRequests, getPatientBlockchainID, getRequestLifecycleStatus } from '../../services/apiClient';
 import { useUser } from '../../Context/UserContext';
 
-
 const Requests = () => {
+    const { user } = useUser();
+    const [requests, setRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const { user, token } = useUser()
     const patientID = getPatientBlockchainID(user);
 
+    const fetchRequests = useCallback(async () => {
+        if (!patientID) {
+            setLoading(false);
+            return;
+        }
 
-    // useEffect(() => {
-    //     console.log('====================================');
-    //     console.log(user);
-    //     console.log('====================================');
-    // }, [])
+        try {
+            const list = await fetchPatientRequests(patientID);
 
-
-
-
-
-    const [requests, setRequests] = useState([]); // Store API response
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchRequests = async () => {
-            if (!token || !patientID) {
-                console.warn("Missing authenticated patient identity. Cannot fetch requests.");
-                setLoading(false);
-                return;
+            if (list.length > 0) {
+                setRequests(list.filter((request) => getRequestLifecycleStatus(request) === 'PENDING_PATIENT_CONSENT'));
+            } else {
+                setRequests([]);
             }
+        } catch (error) {
+            console.error("API Error:", error.response?.data || error.message);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [patientID]);
 
-            try {
-                const response = await axios.get(blockchainUrl(`/getAllRequestsForPatient/${patientID}`), {
-                    headers: authHeaders(token),
-                });
-                // console.log("Fetched Requests:", response.data);
-                
-                const payload = response.data?.data || response.data || [];
-                if (payload.length > 0) {
-                    setRequests(payload.filter((request) => request.status == 'PENDING_PATIENT_CONSENT'));
-                } else {
-                    console.warn("No pending requests found.");
-                }
-            } catch (error) {
-                console.error("API Error:", error.response?.data || error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+    useFocusEffect(
+        useCallback(() => {
+            fetchRequests();
+        }, [fetchRequests])
+    );
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
         fetchRequests();
-    }, [token, patientID]);
+    }, [fetchRequests]);
+
+    const handleStatusChange = (requestId, newStatus) => {
+        if (newStatus !== 'PENDING_PATIENT_CONSENT') {
+            setRequests((prev) => prev.filter((r) => r.requestID !== requestId));
+        }
+    };
 
     return (
-        <View>
+        <View className="flex-1 bg-white">
             <StatusBar style='light' />
-
-            {/* Requests Header */}
             <RequestsHeader requests={requests} />
-
-            <ScrollView className='px-8 flex flex-col gap-y-8 h-[60vh]'>
-
+            <ScrollView
+                className='px-8 flex flex-col gap-y-8 h-[60vh]'
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#1E3A8A']} tintColor="#1E3A8A" />
+                }
+            >
                 <View className="flex flex-col gap-6 py-10">
-                    {/* <DataRequest
-                        key={101}  // Use API ID
-                        type={"on-chain"}  
-                        from={"Ali"}
-                        to={"Ahmad"}
-                        status={'PENDING_PATIENT_CONSENT'}
-                        id={'017a2f8212e23b45eadf4a519460434b40a23eee754a48b5e0625bba9dc5c086'}
-                        about={ "N/A"}
-                        date={ "N/A"}
-                        time={ "N/A"}
-                    /> */}
                     {loading ? (
-                        <Text>Loading requests...</Text>
-                    ) : !token || !patientID ? (
-                        <NoRequests text={"Patient blockchain identity is not linked to this account yet."} />
+                        <Text className="text-center text-gray-500">Loading requests...</Text>
+                    ) : !patientID ? (
+                        <NoRequests text={"Unable to load your data. Patient account ID is missing."} />
                     ) : requests.length === 0 ? (
                         <NoRequests text={"All done, you don't have any pending requests!"} />
                     ) : (
-                        requests.filter((request) => request.status == 'PENDING_PATIENT_CONSENT').map((request) => (
+                        requests.filter((request) => getRequestLifecycleStatus(request) === 'PENDING_PATIENT_CONSENT').map((request) => (
                             <DataRequest
-                                key={request.requestID}  // Use API ID
-                                type={request.type || "on-chain"}  
-                                from={request.doctorID}
+                                key={request.requestID}
+                                type={request.type || "on-chain"}
+                                doctorName={request.doctorName || 'Requesting doctor'}
+                                clinicName={request.requestingClinicName || request.doctorClinicName || 'Clinic unavailable'}
                                 to={request.patientID}
-                                status={request.status}
+                                status={getRequestLifecycleStatus(request)}
                                 id={request.requestID}
-                                about={request.purpose || request.reason || request.dataType || "N/A"}
-                                date={request.requestedAt ? request.requestedAt.slice(0, 10) : "N/A"}
-                                time={request.requestedAt ? request.requestedAt.slice(11, 16) : "N/A"}
+                                about={request.purpose || request.reason || request.dataType || request.about || "N/A"}
+                                requestedAt={request.requestedAt}
+                                onStatusChange={handleStatusChange}
                             />
                         ))
                     )}
                 </View>
-
             </ScrollView>
         </View>
     );

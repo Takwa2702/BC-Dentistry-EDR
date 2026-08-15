@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 21.3.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_DATABASE_API_URL": "https://edr.bizcenter.tech/api/database"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_DATABASE_API_URL": "https://edr.bizcenter.tech/api/database"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_DATABASE_API_URL": "https://edr.bizcenter.tech/api/database"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

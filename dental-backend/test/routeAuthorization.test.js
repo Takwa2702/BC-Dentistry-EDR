@@ -6,10 +6,12 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '..', 'index.js'), 'utf8');
 
 const expectedRoutes = [
-    ["app.get('/getPatientByID/:id'", "requireRoles('admin', 'doctor', 'patient', 'system')"],
+    ["app.get(['/getPatientByID/:id', '/readPatient/:id']", "requireRoles('admin', 'doctor', 'patient', 'system')"],
     ["app.post('/addMedicalRecord'", "requireRoles('doctor')"],
     ["app.get('/getDentalChartData/:id'", "requireRoles('admin', 'doctor', 'patient', 'system')"],
-    ["app.post('/requestAccess'", "requireRoles('doctor')"],
+    ["app.post(['/requestDataAccess', '/requestAccess']", "requireRoles('doctor')"],
+    ["app.get('/referrals'", "requireRoles('doctor')"],
+    ["app.post('/referrals/:requestID/complete'", "requireRoles('doctor')"],
     ["app.post('/grantConsent'", "requireRoles('patient')"],
     ["app.get('/getPendingRequests'", "requireRoles('patient')"],
     ["app.put('/patient/:id'", "requireRoles('admin')"],
@@ -32,7 +34,7 @@ test('every canonical route is JWT protected and has its expected role gate', ()
 });
 
 test('identity-bound routes retain self and clinic checks', () => {
-    assert.match(source, /\/requestAccess'.*requireDoctorSelfBody\('doctorID'\)/);
+    assert.match(source, /\['\/requestDataAccess', '\/requestAccess'\].*requireDoctorSelfBody\('doctorID'\)/);
     assert.match(source, /\/grantConsent'.*requirePatientSelfBody\('patientID'\)/);
     assert.match(source, /\/patient\/rejectRequest'.*requirePatientSelfBody\('patientID'\)/);
     assert.match(source, /\/admin\/rejectRequest'.*requireAdminClinicBody\('adminClinicID'\)/);

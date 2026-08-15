@@ -10,7 +10,6 @@ const PatientPersonalInfo = ({patientDetail}) => {
         <div className="patient-personal-info bg-white border rounded-xl flex gap-x-10 items-left flex flex-col gap-y-6 w-full px-16 py-6">
             <h2 className="text-3xl font-bold">Personal Details</h2>
             <div className="details grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-                <DetailInfo classes={'grow'} header={'Patient ID'} info={patientDetail.patientID} />
                 <DetailInfo classes={'grow'} header={'Insurance Provider'} info={patientDetail.insuranceProvider || 'Not recorded'} />
                 <DetailInfo classes={'grow'} header={'Policy Number'} info={patientDetail.policyNumber || 'Not recorded'} />
                 <DetailInfo classes={'grow'} header={'Coverage Type'} info={patientDetail.coverageType || 'Not recorded'} />

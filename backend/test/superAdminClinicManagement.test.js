@@ -19,15 +19,42 @@ test('clinic creation is system-only and atomically requires one admin', () => {
 test('first-login password change is enforced', () => {
   assert.match(server, /PASSWORD_CHANGE_REQUIRED/);
   assert.match(server, /app\.post\('\/change-password', authenticateToken/);
-  assert.match(server, /Must_Change_Password = 0/);
+  assert.match(server, /Must_Change_Password\s*=\s*0/);
+  assert.match(server, /Security_Version\s*=\s*\?/);
+  assert.match(server, /Revocation_Reason='password changed'/);
 });
 
-test('clinic lifecycle is database-only and does not provision Fabric organizations', () => {
+test('clinic lifecycle provisions a scoped admin identity without creating Fabric organizations', () => {
   const clinicBlock = server.slice(server.indexOf("app.post('/clinics'"), server.indexOf("app.patch('/clinics/:id'"));
-  assert.doesNotMatch(clinicBlock, /callBlockchain|fabric|peer|channel/i);
+  assert.match(clinicBlock, /provisionFabricIdentity\(req, 'admin', `AdminClinic\$\{clinicID\}`/);
+  assert.doesNotMatch(clinicBlock, /createChannel|joinChannel|createOrganization/);
 });
 
 test('inactive clinics prevent their clinic admin from logging in', () => {
   assert.match(server, /Organization\.IsActive AS Clinic_IsActive/);
   assert.match(server, /Clinic is inactive/);
+});
+
+test('clinic administrator lifecycle is system-only, transactional, and revokes transferred ownership', () => {
+  for (const route of [
+    "app.patch('/clinics/:clinicID/admin'",
+    "app.post('/clinics/:clinicID/admin/reset-password'",
+    "app.post('/clinics/:clinicID/admin/transfer'",
+    "app.get('/clinics/:clinicID/admin-history'",
+  ]) assert.ok(server.includes(route), `missing ${route}`);
+  assert.match(server, /CLINIC_ADMIN_TRANSFERRED/);
+  assert.match(server, /clinic ownership transferred/);
+  assert.match(server, /UPDATE Admin SET User_ID=\?/);
+  assert.match(server, /UPDATE User SET IsActive=0,Security_Version=Security_Version\+1/);
+  assert.match(server, /await connection\.rollback\(\)\.catch/);
+});
+
+test('clinic deactivation cancels active dependencies and preserves historical records', () => {
+  assert.match(server, /app\.get\('\/clinics\/:id\/deactivation-impact'/);
+  const route = server.match(/app\.patch\('\/clinics\/:id'[\s\S]*?\n\}\);/)[0];
+  assert.match(route, /Appointment\.Status='cancelled'/);
+  assert.match(route, /UPDATE Request SET Status='cancelled'/);
+  assert.match(route, /Push_Subscription SET Active=0/);
+  assert.match(route, /internal\/clinics\/\$\{clinicID\}\/deactivate/);
+  assert.doesNotMatch(route, /DELETE FROM (Clinical_Record|Lab_Result|Patient|Doctor)/);
 });

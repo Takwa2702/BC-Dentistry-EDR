@@ -6,12 +6,10 @@ module.exports = {
     extend: {
       colors: {
         dblue: '#000814',
-        primary: '003566',
-        'white-off': 'F8F8F8',
-        
+        primary: '#003566',
+        'white-off': '#F8F8F8',
       }
     },
   },
   plugins: [],
 }
-
